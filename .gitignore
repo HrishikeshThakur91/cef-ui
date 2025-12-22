@@ -1,0 +1,15 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/cef-ui/cef-ui.vcxproj.user
+/.vs/cef-ui/CopilotIndices/17.14.1530.14912
+/.vs/cef-ui/FileContentIndex
+/cef-ui-tests/x64/*
+/cef-ui-tests/cef-ui-tests.vcxproj.user
+/cef-ui/x64/*
+/x64/*
+
+/packages
+
+.vs/*

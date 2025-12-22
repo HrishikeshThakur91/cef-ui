@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{ce1fc4db-319e-4495-9fb4-77ea92bc19df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core">
+      <UniqueIdentifier>{08f92a39-bd9e-4d50-9681-46c61c6f5fbc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\ipc">
+      <UniqueIdentifier>{7cebf2c2-3f28-4424-835e-afc2806bea6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\ui">
+      <UniqueIdentifier>{e84d898b-dee1-44f5-b91c-618aa9f3eb1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="inc">
+      <UniqueIdentifier>{1c8b6cda-5016-491d-90fe-4dd16d51be6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="inc\core">
+      <UniqueIdentifier>{80ae82c4-6c8c-4bee-9196-be70244ef0d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="inc\ipc">
+      <UniqueIdentifier>{091162c1-5d13-4538-8ee1-a6579367e637}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="inc\ui">
+      <UniqueIdentifier>{d89fb4d9-0f70-41a4-b9b9-6dc1c4aaec01}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\cef-ui.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\AppConfig.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\ProcessController.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ipc\Handshake.cpp">
+      <Filter>src\ipc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ipc\JsonParser.cpp">
+      <Filter>src\ipc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ipc\WebSocketTransport.cpp">
+      <Filter>src\ipc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ipc\WssConnectionManager.cpp">
+      <Filter>src\ipc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ipc\BeastWebSocketConnection.cpp">
+      <Filter>src\ipc</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="inc\core\AppConfig.h">
+      <Filter>inc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\core\Logger.h">
+      <Filter>inc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\core\ProcessController.h">
+      <Filter>inc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ipc\Handshake.h">
+      <Filter>inc\ipc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ipc\IMessageChannel.h">
+      <Filter>inc\ipc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ipc\MessageTypes.h">
+      <Filter>inc\ipc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\core\ILifecycleListener.h">
+      <Filter>inc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\core\InvalidConfigException.h">
+      <Filter>inc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ipc\ITlsContextProvider.h">
+      <Filter>inc\ipc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ipc\IWebSocketConnection.h">
+      <Filter>inc\ipc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ipc\JsonParser.h">
+      <Filter>inc\ipc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ipc\WebSocketTransport.h">
+      <Filter>inc\ipc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ipc\WssConnectionManager.h">
+      <Filter>inc\ipc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ipc\IpcProtocolException.h" />
+    <ClInclude Include="inc\ipc\BeastWebSocketConnection.h">
+      <Filter>inc\ipc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+</Project>

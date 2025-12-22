@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="src\test_main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\test_app_config.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\test_process_controller.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ipc\test_handshake.cpp">
+      <Filter>src\ipc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ipc\test_message_types.cpp">
+      <Filter>src\ipc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ipc\test_websocket_transport.cpp">
+      <Filter>src\ipc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\support\app_config_impl.cpp">
+      <Filter>src\support</Filter>
+    </ClCompile>
+    <ClCompile Include="src\support\ipc_impl.cpp">
+      <Filter>src\support</Filter>
+    </ClCompile>
+    <ClCompile Include="src\support\process_controller_impl.cpp">
+      <Filter>src\support</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ipc\test_wss_connection_manager.cpp">
+      <Filter>src\ipc</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="src\support\mock_connection_listener.h">
+      <Filter>src\support</Filter>
+    </ClInclude>
+    <ClInclude Include="src\support\mock_tls_context_provider.h">
+      <Filter>src\support</Filter>
+    </ClInclude>
+    <ClInclude Include="src\support\mock_websocket_connection.h">
+      <Filter>src\support</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{af1a70f5-7c72-4414-a2df-32f9abdc05c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core">
+      <UniqueIdentifier>{09c08d3f-06d1-4326-9b1d-87b60146268e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\ipc">
+      <UniqueIdentifier>{c43ba74c-a0be-4d73-8de8-06f0b32497e4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="inc">
+      <UniqueIdentifier>{5729c121-32a3-4760-8cc5-4f9b2e02fa57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\support">
+      <UniqueIdentifier>{77724918-9f8c-4beb-a76f-a0a1ed3fcbe8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+</Project>
