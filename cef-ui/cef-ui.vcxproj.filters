@@ -55,6 +55,12 @@
     <ClCompile Include="src\ipc\BeastWebSocketConnection.cpp">
       <Filter>src\ipc</Filter>
     </ClCompile>
+    <ClCompile Include="src\ui\CefBootstrap.cpp" />
+    <ClCompile Include="src\ui\NativeWindow.cpp" />
+    <ClCompile Include="src\ui\CefHandlers.cpp" />
+    <ClCompile Include="src\ui\CefBrowserManager.cpp" />
+    <ClCompile Include="src\ui\ShutdownCoordinator.cpp" />
+    <ClCompile Include="src\ui\BrowserInstance.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
@@ -103,6 +109,12 @@
     <ClInclude Include="inc\ipc\BeastWebSocketConnection.h">
       <Filter>inc\ipc</Filter>
     </ClInclude>
+    <ClInclude Include="inc\ui\CefBootstrap.h" />
+    <ClInclude Include="inc\ui\NativeWindow.h" />
+    <ClInclude Include="inc\ui\CefHandlers.h" />
+    <ClInclude Include="inc\ui\CefBrowserManager.h" />
+    <ClInclude Include="inc\ui\ShutdownCoordinator.h" />
+    <ClInclude Include="inc\ui\BrowserInstance.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -27,6 +27,12 @@
     <ClCompile Include="src\ipc\JsonParser.cpp" />
     <ClCompile Include="src\ipc\WebSocketTransport.cpp" />
     <ClCompile Include="src\ipc\WssConnectionManager.cpp" />
+    <ClCompile Include="src\ui\BrowserInstance.cpp" />
+    <ClCompile Include="src\ui\CefBootstrap.cpp" />
+    <ClCompile Include="src\ui\CefBrowserManager.cpp" />
+    <ClCompile Include="src\ui\CefHandlers.cpp" />
+    <ClCompile Include="src\ui\NativeWindow.cpp" />
+    <ClCompile Include="src\ui\ShutdownCoordinator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
@@ -47,6 +53,12 @@
     <ClInclude Include="inc\ipc\MessageTypes.h" />
     <ClInclude Include="inc\ipc\WebSocketTransport.h" />
     <ClInclude Include="inc\ipc\WssConnectionManager.h" />
+    <ClInclude Include="inc\ui\BrowserInstance.h" />
+    <ClInclude Include="inc\ui\CefBootstrap.h" />
+    <ClInclude Include="inc\ui\CefBrowserManager.h" />
+    <ClInclude Include="inc\ui\CefHandlers.h" />
+    <ClInclude Include="inc\ui\NativeWindow.h" />
+    <ClInclude Include="inc\ui\ShutdownCoordinator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

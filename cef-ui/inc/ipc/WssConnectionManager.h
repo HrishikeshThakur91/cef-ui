@@ -29,7 +29,7 @@ namespace cef_ui {
         /// - Send/receive messages through IMessageChannel
         /// 
         /// Guarantees:
-        /// - Exponential backoff: 1s ? 2s ? 4s ? 8s ? 8s (max)
+        /// - Exponential backoff: 1s -> 2s -> 4s -> 8s -> 8s (max)
         /// - Max 5 retries before throwing IpcProtocolException
         /// - 30 second connection timeout
         /// - Error messages include retry count
@@ -40,7 +40,7 @@ namespace cef_ui {
             /// @param channel: IMessageChannel implementation (WebSocket, mock, etc)
             explicit WssConnectionManager(std::shared_ptr<IMessageChannel> channel);
 
-            ~WssConnectionManager() = default;
+            virtual ~WssConnectionManager() = default;
 
             // Non-copyable
             WssConnectionManager(const WssConnectionManager&) = delete;
@@ -89,6 +89,11 @@ namespace cef_ui {
             /// @return 30000 (30 seconds)
             int GetConnectionTimeoutMs() const;
 
+        protected:
+            /// Helper: sleep without blocking (virtual for mocking in tests).
+            /// @param ms: milliseconds to sleep
+            virtual void Sleep(int ms);
+
         private:
             std::shared_ptr<IMessageChannel> channel_;
             std::vector<std::shared_ptr<IConnectionListener>> listeners_;
@@ -99,10 +104,6 @@ namespace cef_ui {
             /// Helper: calculate next backoff value (exponential: 1s, 2s, 4s, 8s, 8s max).
             /// @return backoff in milliseconds
             int CalculateNextBackoff();
-
-            /// Helper: sleep without blocking (virtual for mocking in tests).
-            /// @param ms: milliseconds to sleep
-            virtual void Sleep(int ms);
 
             /// Helper: emit lifecycle events to all registered listeners.
             void EmitConnecting();
