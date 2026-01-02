@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Resource Files">
@@ -55,12 +55,24 @@
     <ClCompile Include="src\ipc\BeastWebSocketConnection.cpp">
       <Filter>src\ipc</Filter>
     </ClCompile>
-    <ClCompile Include="src\ui\CefBootstrap.cpp" />
-    <ClCompile Include="src\ui\NativeWindow.cpp" />
-    <ClCompile Include="src\ui\CefHandlers.cpp" />
-    <ClCompile Include="src\ui\CefBrowserManager.cpp" />
-    <ClCompile Include="src\ui\ShutdownCoordinator.cpp" />
-    <ClCompile Include="src\ui\BrowserInstance.cpp" />
+    <ClCompile Include="src\ui\BrowserInstance.cpp">
+      <Filter>src\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\CefBootstrap.cpp">
+      <Filter>src\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\CefBrowserManager.cpp">
+      <Filter>src\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\CefHandlers.cpp">
+      <Filter>src\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\NativeWindow.cpp">
+      <Filter>src\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\ShutdownCoordinator.cpp">
+      <Filter>src\ui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
@@ -105,16 +117,30 @@
     <ClInclude Include="inc\ipc\WssConnectionManager.h">
       <Filter>inc\ipc</Filter>
     </ClInclude>
-    <ClInclude Include="inc\ipc\IpcProtocolException.h" />
+    <ClInclude Include="inc\ipc\IpcProtocolException.h" >
+      <Filter>inc\ipc</Filter>
+    </ClInclude>
     <ClInclude Include="inc\ipc\BeastWebSocketConnection.h">
       <Filter>inc\ipc</Filter>
     </ClInclude>
-    <ClInclude Include="inc\ui\CefBootstrap.h" />
-    <ClInclude Include="inc\ui\NativeWindow.h" />
-    <ClInclude Include="inc\ui\CefHandlers.h" />
-    <ClInclude Include="inc\ui\CefBrowserManager.h" />
-    <ClInclude Include="inc\ui\ShutdownCoordinator.h" />
-    <ClInclude Include="inc\ui\BrowserInstance.h" />
+    <ClInclude Include="inc\ui\BrowserInstance.h">
+      <Filter>inc\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ui\CefBootstrap.h">
+      <Filter>inc\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ui\CefBrowserManager.h">
+      <Filter>inc\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ui\CefHandlers.h">
+      <Filter>inc\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ui\NativeWindow.h">
+      <Filter>inc\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ui\ShutdownCoordinator.h">
+      <Filter>inc\ui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

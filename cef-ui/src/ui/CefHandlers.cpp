@@ -1,3 +1,15 @@
+// =====================================================
+// PHASE 6+ ONLY
+//
+// This file contains CEF handler scaffolding generated
+// for future phases (IPC, JS bindings, lifecycle hooks).
+//
+// It is intentionally NOT used, NOT wired, and NOT
+// referenced in Phase 5.
+//
+// Phase 5 acceptance criteria explicitly exclude handler
+// plumbing beyond minimal browser creation.
+// =====================================================
 #include "../../inc/ui/CefHandlers.h"
 #include <stdexcept>
 

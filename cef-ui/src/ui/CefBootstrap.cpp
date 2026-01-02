@@ -1,75 +1,85 @@
 #include "../../inc/ui/CefBootstrap.h"
 #include <stdexcept>
 
-// Include real CEF headers
-#include "include/cef_app.h"
+// Include CEF headers
+#include <include/cef_app.h>
+
 
 namespace cef_ui {
-namespace ui {
+    namespace ui {
 
-namespace {
-  // Enforce single CEF initialization per process
-  static bool g_initialized = false;
-}
+        std::atomic<bool> CefBootstrap::process_initialized_{ false };
 
-CefBootstrap::CefBootstrap()
-    : initialized_(false) {
-  
-  if (g_initialized) {
-    throw std::runtime_error("CEF can only be initialized once per process");
-  }
+        CefBootstrap::CefBootstrap()
+            : initialized_(false) {
 
-  try {
-    Initialize();
-    g_initialized = true;
-    initialized_ = true;
-  } catch (...) {
-    throw;
-  }
-}
+            bool expected = false;
+            if (!process_initialized_.compare_exchange_strong(expected, true)) {
+                throw std::runtime_error("CEF can only be initialized once per process");
+            }
 
-CefBootstrap::~CefBootstrap() noexcept {
-  // Do NOT call CefShutdown() here.
-  // CefShutdown() is called by Run() after CefRunMessageLoop() exits.
-  // Destructor is only a cleanup marker, CEF lifecycle is managed by Run().
-}
+            try {
+                Initialize();
+                initialized_ = true;
+            }
+            catch (...) {
+                throw;
+            }
+        }
 
-void CefBootstrap::Run() {
-  if (!initialized_) {
-    throw std::runtime_error("CEF not initialized - call constructor first");
-  }
+        CefBootstrap::~CefBootstrap() noexcept {
+            // Do NOT call CefShutdown() here.
+            // CefShutdown() is called by Run() after CefRunMessageLoop() exits.
+            // Destructor is only a cleanup marker, CEF lifecycle is managed by Run().
+        }
 
-  // Enter CEF message loop
-  // This blocks until the application exits (e.g., all windows closed)
-  CefRunMessageLoop();
+        void CefBootstrap::Run() {
+            if (!initialized_) {
+                throw std::runtime_error("CEF not initialized - call constructor first");
+            }
 
-  // CefRunMessageLoop() has returned - message loop is done
-  // Now perform shutdown
-  Shutdown();
-}
+            if (run_called_) {
+                throw std::runtime_error("CefBootstrap::Run() may only be called once");
+            }
 
-void CefBootstrap::Initialize() {
-  // Prepare main arguments (empty for Windows)
-  CefMainArgs main_args;
+            run_called_ = true;
 
-  // Prepare minimal CEF settings
-  CefSettings settings;
-  // Use default settings for Phase 5 Step 1
-  // Full configuration deferred to Phase 6+
+            // Enter CEF message loop
+            // This blocks until the application exits (e.g., all windows closed)
+            CefRunMessageLoop();
 
-  // Initialize CEF
-  // app=nullptr (no CefApp handler in Phase 5 Step 1)
-  // windows_sandbox_info=nullptr (Windows 7+ compatibility, not needed for basic init)
-  if (!CefInitialize(main_args, settings, nullptr, nullptr)) {
-    throw std::runtime_error("CefInitialize() failed");
-  }
-}
+            // CefRunMessageLoop() has returned - message loop is done
+            // Now perform shutdown
+            Shutdown();
+        }
 
-void CefBootstrap::Shutdown() noexcept {
-  // Called by Run() after CefRunMessageLoop() exits
-  // This is the proper place to call CefShutdown() per CEF documentation
-  CefShutdown();
-}
+        void CefBootstrap::Initialize() {
+            // Prepare main arguments (empty for Windows)
+            CefMainArgs main_args;
 
-}  // namespace ui
+            // Prepare minimal CEF settings
+            CefSettings settings;
+            // Use default settings for Phase 5 Step 1
+            // Full configuration deferred to Phase 6+
+
+            // Initialize CEF
+            // app=nullptr (no CefApp handler in Phase 5 Step 1)
+            // windows_sandbox_info=nullptr (Windows 7+ compatibility, not needed for basic init)
+            if (!CefInitialize(main_args, settings, nullptr, nullptr)) {
+                throw std::runtime_error("CefInitialize() failed");
+            }
+        }
+
+        void CefBootstrap::Shutdown() noexcept {
+            // Called by Run() after CefRunMessageLoop() exits
+            // This is the proper place to call CefShutdown() per CEF documentation
+            if (!initialized_) {
+                return;
+            }
+
+            initialized_ = false;
+            CefShutdown();
+        }
+
+    }  // namespace ui
 }  // namespace cef_ui

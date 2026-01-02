@@ -2,7 +2,6 @@
 
 #include <windows.h>
 #include <string>
-#include <map>
 
 namespace cef_ui {
 namespace ui {
@@ -58,6 +57,8 @@ class NativeWindow {
  private:
   HWND hwnd_;
   std::string title_;
+
+  static bool window_created_;
 
   /// Initialize window class and create window.
   void InitializeWindow();
