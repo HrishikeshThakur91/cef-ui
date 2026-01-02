@@ -6,6 +6,8 @@
 namespace cef_ui {
 namespace ui {
 
+    bool NativeWindow::window_created_ = false;
+
 namespace {
   // Static window class name
   const wchar_t* WINDOW_CLASS_NAME = L"CefUIWindowClass";
@@ -51,8 +53,14 @@ namespace {
 NativeWindow::NativeWindow(const std::string& title)
     : hwnd_(nullptr),
       title_(title) {
+
+    if (window_created_) {
+        throw std::runtime_error("Only one NativeWindow instance is allowed per process");
+    }
+
   try {
     InitializeWindow();
+    window_created_ = true;
   } catch (...) {
     DestroyWindowHandle();
     throw;
@@ -79,7 +87,7 @@ void NativeWindow::InitializeWindow() {
       0,                          // Extended style
       WINDOW_CLASS_NAME,          // Class name
       wide_title.c_str(),         // Window title
-      WS_OVERLAPPEDWINDOW,        // Style (standard window)
+      WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,        // Style (standard window)
       CW_USEDEFAULT,              // X position
       CW_USEDEFAULT,              // Y position
       800,                         // Width
@@ -96,17 +104,18 @@ void NativeWindow::InitializeWindow() {
     throw std::runtime_error(oss.str());
   }
 
-  // Store instance pointer in global map for message routing
-  g_window_map[hwnd_] = this;
-
   // Initially hide the window
   ShowWindow(hwnd_, SW_HIDE);
+  UpdateWindow(hwnd_);
 }
 
 void NativeWindow::DestroyWindowHandle() noexcept {
   if (hwnd_) {
     // Remove from global map
     g_window_map.erase(hwnd_);
+    ::DestroyWindow(hwnd_);
+    hwnd_ = nullptr;
+    window_created_ = false;
 
     // Destroy window
     if (!::DestroyWindow(hwnd_)) {
@@ -123,6 +132,11 @@ LRESULT CALLBACK NativeWindow::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LP
   if (it != g_window_map.end()) {
     return it->second->OnMessage(msg, wparam, lparam);
   }
+  if (msg == WM_NCCREATE) {
+      CREATESTRUCTW* cs = reinterpret_cast<CREATESTRUCTW*>(lparam);
+      NativeWindow* window = static_cast<NativeWindow*>(cs->lpCreateParams);
+      g_window_map[hwnd] = window;
+  }
 
   // Fallback to default handling
   return DefWindowProcW(hwnd, msg, wparam, lparam);
@@ -137,7 +151,6 @@ LRESULT NativeWindow::OnMessage(UINT msg, WPARAM wparam, LPARAM lparam) {
 
     case WM_DESTROY:
       // Window is being destroyed - post quit message to exit message loop
-      PostQuitMessage(0);
       return 0;
 
     default:

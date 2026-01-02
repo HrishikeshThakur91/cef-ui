@@ -8,7 +8,8 @@ namespace ui {
 
 // Forward declarations
 class NativeWindow;
-class CefClientHandler;
+//class CefClientHandler;
+class BrowserInstance;
 
 /// Single CEF browser instance manager.
 /// 
@@ -60,9 +61,10 @@ class CefBrowserManager {
  private:
   NativeWindow& window_;
   std::string url_;
-  std::unique_ptr<CefClientHandler> client_;
-  void* browser_;  // CefRefPtr<CefBrowser> (opaque to avoid CEF includes)
-  bool is_ready_;
+  ////std::unique_ptr<CefClientHandler> client_;
+  //void* browser_;  // CefRefPtr<CefBrowser> (opaque to avoid CEF includes)
+  //bool is_ready_;
+  std::unique_ptr<BrowserInstance> browser_;
 
   /// Create browser instance with client handler.
   void CreateBrowser();

@@ -60,9 +60,9 @@ namespace cef {
       return new CefBrowser();
     }
 
-    static CefFrame* GetMainFrame(void* browser) {
-      // TODO: Link against actual libcef CefBrowser::GetMainFrame()
-      return new CefFrame();
+    static CefFrame* GetMainFrame(void* /*browser*/) {
+        static CefFrame frame;
+        return &frame;
     }
 
     static void CloseBrowser(void* browser, bool force_close) {
@@ -72,103 +72,116 @@ namespace cef {
 }
 
 namespace cef_ui {
-namespace ui {
+    namespace ui {
 
-BrowserInstance::BrowserInstance(HWND hwnd)
-    : hwnd_(hwnd),
-      browser_(nullptr),
-      load_handler_(nullptr) {
-  
-  if (!hwnd) {
-    throw std::runtime_error("HWND cannot be null");
-  }
+        BrowserInstance::BrowserInstance(HWND hwnd)
+            : hwnd_(hwnd),
+            browser_(nullptr),
+            load_handler_(nullptr) {
 
-  try {
-    CreateBrowser();
-  } catch (...) {
-    DestroyBrowser();
-    throw;
-  }
-}
+            if (!hwnd) {
+                throw std::runtime_error("HWND cannot be null");
+            }
 
-BrowserInstance::~BrowserInstance() noexcept {
-  DestroyBrowser();
-}
+            try {
+                CreateBrowser();
+            }
+            catch (...) {
+                DestroyBrowser();
+                throw;
+            }
+        }
 
-bool BrowserInstance::IsValid() const {
-  return browser_ != nullptr;
-}
+        BrowserInstance::~BrowserInstance() noexcept {
+            DestroyBrowser();
+        }
 
-void BrowserInstance::LoadUrl(const std::string& url) {
-  if (!browser_) {
-    throw std::runtime_error("Browser not created");
-  }
+        bool BrowserInstance::IsValid() const {
+            return browser_ != nullptr;
+        }
 
-  // Validate HTTPS URL
-  ValidateHttpsUrl(url);
+        void BrowserInstance::LoadUrl(const std::string& url) {
+            if (shutdown_initiated_) {
+                throw std::runtime_error("BrowserInstance is shut down");
+            }
+            if (!browser_) {
+                throw std::runtime_error("Browser not created");
+            }
 
-  // Get main frame and load URL
-  cef::CefFrame* frame = cef::CefBrowserHost::GetMainFrame(browser_);
-  if (!frame) {
-    throw std::runtime_error("Failed to get browser main frame");
-  }
+            // Validate HTTPS URL
+            ValidateHttpsUrl(url);
 
-  // Navigate to URL (asynchronous)
-  frame->LoadURL(url.c_str());
-}
+            // Get main frame and load URL
+            cef::CefFrame* frame = cef::CefBrowserHost::GetMainFrame(browser_);
+            if (!frame) {
+                throw std::runtime_error("Failed to get browser main frame");
+            }
 
-void BrowserInstance::CreateBrowser() {
-  // Create browser window info
-  cef::CefWindowInfo window_info;
-  
-  // Bind browser to existing Win32 HWND
-  window_info.SetAsChild(hwnd_);
+            // Navigate to URL (asynchronous)
+            frame->LoadURL(url.c_str());
+        }
 
-  // Use default browser settings (minimal)
-  cef::CefBrowserSettings settings;
+        void BrowserInstance::CreateBrowser() {
+            // Create browser window info
+            cef::CefWindowInfo window_info;
 
-  // Create minimal load handler for callbacks
-  load_handler_ = new cef::MinimalLoadHandler();
+            // Bind browser to existing Win32 HWND
+            window_info.SetAsChild(hwnd_);
 
-  // Create browser instance
-  // Empty URL for Step 3 - URL loaded in Step 4 via LoadUrl()
-  browser_ = cef::CefBrowserHost::CreateBrowser(
-      window_info,
-      settings,
-      "",          // Empty URL - will be loaded via LoadUrl() in Phase 5 Step 4
-      load_handler_,  // Minimal load handler for callback observation
-      nullptr      // No extra info
-  );
+            // Use default browser settings (minimal)
+            cef::CefBrowserSettings settings;
 
-  if (!browser_) {
-    throw std::runtime_error("Failed to create CEF browser instance");
-  }
-}
+            // Create minimal load handler for callbacks
+            load_handler_ = new cef::MinimalLoadHandler();
 
-void BrowserInstance::DestroyBrowser() noexcept {
-  if (browser_) {
-    // Close browser gracefully
-    // (actual CEF close call will be linked in Phase 5 Step 5+)
-    browser_ = nullptr;
-  }
+            // Create browser instance
+            // Empty URL for Step 3 - URL loaded in Step 4 via LoadUrl()
+            browser_ = cef::CefBrowserHost::CreateBrowser(
+                window_info,
+                settings,
+                "",          // Empty URL - will be loaded via LoadUrl() in Phase 5 Step 4
+                load_handler_,  // Minimal load handler for callback observation
+                nullptr      // No extra info
+            );
 
-  if (load_handler_) {
-    // Release load handler
-    load_handler_ = nullptr;
-  }
-}
+            if (!browser_) {
+                throw std::runtime_error("Failed to create CEF browser instance");
+            }
+        }
 
-void BrowserInstance::ValidateHttpsUrl(const std::string& url) const {
-  if (url.empty()) {
-    throw std::runtime_error("URL cannot be empty");
-  }
+        void BrowserInstance::DestroyBrowser() noexcept {
+            if (shutdown_initiated_) {
+                return;
+            }
 
-  // Check that URL starts with https://
-  const std::string https_prefix = "https://";
-  if (url.compare(0, https_prefix.length(), https_prefix) != 0) {
-    throw std::runtime_error("Only HTTPS URLs are allowed");
-  }
-}
+            shutdown_initiated_ = true;
 
-}  // namespace ui
+            // Phase 5 deterministic shutdown:
+            // We explicitly close and delete owned resources.
+            if (browser_) {
+                // Phase 5 stub: explicit close point
+                // Phase 6+: replace with CefBrowserHost::CloseBrowser(...)
+                delete static_cast<cef::CefBrowser*>(browser_);
+                browser_ = nullptr;
+            }
+
+            if (load_handler_) {
+                delete static_cast<cef::MinimalLoadHandler*>(load_handler_);
+                load_handler_ = nullptr;
+            }
+        }
+
+        void BrowserInstance::ValidateHttpsUrl(const std::string& url) const {
+            if (url.empty()) {
+                throw std::runtime_error("URL cannot be empty");
+            }
+
+            // Check that URL starts with https://
+            const std::string https_prefix = "https://";
+            if (url.compare(0, https_prefix.length(), https_prefix) != 0) {
+                throw std::runtime_error("Only HTTPS URLs are allowed");
+            }
+        }
+
+    }  // namespace ui
 }  // namespace cef_ui

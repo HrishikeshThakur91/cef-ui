@@ -63,9 +63,16 @@ class BrowserInstance {
   void LoadUrl(const std::string& url);
 
  private:
+	 bool shutdown_initiated_ = false;
+
   HWND hwnd_;
-  void* browser_;  // Opaque CefRefPtr<CefBrowser> - holds actual browser
-  void* load_handler_;  // Opaque CefRefPtr<CefLoadHandler> - observes load events
+  // Owned browser handle (Phase 5 stub).
+  // In Phase 6+, this will become CefRefPtr<CefBrowser>.
+  void* browser_;
+
+  // Owned load handler (Phase 5 stub).
+  // Ownership is explicit and released during shutdown.
+  void* load_handler_;
 
   /// Create browser instance and bind to HWND.
   void CreateBrowser();
