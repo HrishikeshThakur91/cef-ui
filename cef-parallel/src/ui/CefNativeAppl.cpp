@@ -5,13 +5,17 @@
 #include "../../cef-parallel/inc/ui/CefNativeAppl.h"
 
 #include <string>
+#include <iostream>
 
 #include "include/cef_browser.h"
 #include "include/cef_command_line.h"
 #include "include/views/cef_browser_view.h"
 #include "include/views/cef_window.h"
 #include "include/wrapper/cef_helpers.h"
+#include "include/wrapper/cef_closure_task.h"
+#include "include/base/cef_callback.h"
 #include "../../cef-parallel/inc/ui/CefHandler.h"
+#include "../../cef-parallel/inc/grpc/UiCommand.h"
 
 
 namespace cef_ui {
@@ -103,11 +107,45 @@ namespace cef_ui {
 
         CefNativeAppl::CefNativeAppl() = default;
 
+        CefNativeAppl::~CefNativeAppl() {
+            // Stop gRPC server before CEF shutdown
+            if (grpc_server_) {
+                grpc_server_->Stop();
+            }
+        }
+
         void CefNativeAppl::OnContextInitialized() {
             CEF_REQUIRE_UI_THREAD();
 
             CefRefPtr<CefCommandLine> command_line =
                 CefCommandLine::GetGlobalCommandLine();
+
+            // Phase 6.2: Start gRPC server
+            std::string ipc_port_str = command_line->GetSwitchValue("ipcPort");
+            std::string session_token = command_line->GetSwitchValue("sessionToken");
+            
+            if (!ipc_port_str.empty() && !session_token.empty()) {
+                try {
+                    uint16_t ipc_port = static_cast<uint16_t>(std::stoi(ipc_port_str));
+                    grpc_server_ = std::make_unique<cef_ui::grpc_server::GrpcServer>(session_token);
+                    
+                    if (!grpc_server_->Start(ipc_port)) {
+                        std::cerr << "[CefNativeAppl] Failed to start gRPC server" << std::endl;
+                        grpc_server_.reset();
+                    }
+                } catch (const std::exception& e) {
+                    std::cerr << "[CefNativeAppl] Error starting gRPC server: " << e.what() << std::endl;
+                }
+            } else {
+                std::cerr << "[CefNativeAppl] Warning: --ipcPort or --sessionToken not provided, gRPC server not started" << std::endl;
+            }
+
+            // Phase 6.2 Step 5: Schedule periodic command processing
+            // Process commands every 100ms (fire-and-forget, no execution)
+            if (grpc_server_ && grpc_server_->IsRunning()) {
+                CefPostTask(TID_UI, 
+                    base::BindOnce(&CefNativeAppl::ProcessPendingCommands, this));
+            }
 
             static ui::CefUiBridgeImpl g_uiBridge;
 
@@ -130,7 +168,7 @@ namespace cef_ui {
             // that instead of the default URL.
             url = command_line->GetSwitchValue("url");
             if (url.empty()) {
-                url = "http://10.1.29.18:8080/";
+                url = "http://10.255.1.143:8080/";
             }
 
             // Views is enabled by default (add `--use-native` to disable).
@@ -183,6 +221,46 @@ namespace cef_ui {
                 CefBrowserHost::CreateBrowser(window_info, handler, url, browser_settings,
                     nullptr, nullptr);
             }
+        }
+
+        void CefNativeAppl::ProcessPendingCommands() {
+            CEF_REQUIRE_UI_THREAD();
+
+            // Phase 6.2 Step 5: Dequeue and log commands (NO EXECUTION)
+            if (!grpc_server_ || !grpc_server_->IsRunning()) {
+                return;  // Server stopped, no more processing
+            }
+
+            cef_ui::grpc_server::CommandQueue* queue = grpc_server_->GetCommandQueue();
+            if (!queue) {
+                return;
+            }
+
+            // Process all pending commands
+            while (auto cmd_opt = queue->Dequeue()) {
+                const auto& cmd = cmd_opt.value();
+                
+                switch (cmd.GetType()) {
+                    case cef_ui::grpc_server::CommandType::OPEN_PAGE: {
+                        if (const auto* open_page = cmd.AsOpenPage()) {
+                            std::cout << "[CefNativeAppl] Received OPEN_PAGE command: "
+                                      << "command_id=" << open_page->command_id
+                                      << ", url=" << open_page->url
+                                      << " (NOT EXECUTED - Phase 6.2)" << std::endl;
+                        }
+                        break;
+                    }
+                    case cef_ui::grpc_server::CommandType::SHUTDOWN: {
+                        std::cout << "[CefNativeAppl] Received SHUTDOWN command (NOT EXECUTED - Phase 6.2)" << std::endl;
+                        break;
+                    }
+                }
+            }
+
+            // Schedule next processing cycle (100ms delay)
+            CefPostDelayedTask(TID_UI, 
+                base::BindOnce(&CefNativeAppl::ProcessPendingCommands, this), 
+                100);
         }
 
         CefRefPtr<CefClient> CefNativeAppl::GetDefaultClient() {

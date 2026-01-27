@@ -29,6 +29,12 @@
     <Filter Include="inc\ui">
       <UniqueIdentifier>{d89fb4d9-0f70-41a4-b9b9-6dc1c4aaec01}</UniqueIdentifier>
     </Filter>
+    <Filter Include="inc\grpc">
+      <UniqueIdentifier>{93d7e348-664e-4d62-b346-af8e589d0604}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\grpc">
+      <UniqueIdentifier>{a49c55c0-756e-4277-9585-3e6c8bf3a741}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\cef-ui.cpp">
@@ -66,6 +72,21 @@
     </ClCompile>
     <ClCompile Include="src\ui\CefUiBridgeImpl.cpp">
       <Filter>src\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\grpc\GrpcServer.cpp">
+      <Filter>src\grpc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\grpc\CefControlServiceHandler.cpp">
+      <Filter>src\grpc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\grpc\CefControlServiceImpl.cpp">
+      <Filter>src\grpc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\grpc\cef_service.grpc.pb.cc">
+      <Filter>src\grpc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\grpc\cef_service.pb.cc">
+      <Filter>src\grpc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -128,6 +149,21 @@
     </ClInclude>
     <ClInclude Include="inc\ui\CefUiBridgeImpl.h">
       <Filter>inc\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\grpc\GrpcServer.h">
+      <Filter>inc\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\grpc\CefControlServiceHandler.h">
+      <Filter>inc\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\grpc\CefControlServiceImpl.h">
+      <Filter>inc\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\grpc\UiCommand.h">
+      <Filter>inc\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\grpc\CommandQueue.h">
+      <Filter>inc\grpc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

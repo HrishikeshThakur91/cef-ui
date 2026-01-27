@@ -1,5 +1,6 @@
 package com.ui.cef_control.ipc;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,6 +68,15 @@ public class WssChannel implements IMessageChannel {
 			l.onDisconnected();
 		}
 	}
+
+
+	@Override
+	public void queryPageStatus(String commandId) throws IOException
+	{
+		// Not implemented in WSS channel
+		throw new UnsupportedOperationException("queryPageStatus is not supported in WssChannel");
+	}
+
 
 	public void addConnectionListener(ConnectionListener listener) {
 		if (listener != null && !listeners.contains(listener)) {

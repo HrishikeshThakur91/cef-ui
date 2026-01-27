@@ -22,6 +22,11 @@
     <ClCompile Include="src\cef-ui.cpp" />
     <ClCompile Include="src\core\AppConfig.cpp" />
     <ClCompile Include="src\core\ProcessController.cpp" />
+    <ClCompile Include="src\grpc\CefControlServiceHandler.cpp" />
+    <ClCompile Include="src\grpc\CefControlServiceImpl.cpp" />
+    <ClCompile Include="src\grpc\GrpcServer.cpp" />
+    <ClCompile Include="src\grpc\cef_service.grpc.pb.cc" />
+    <ClCompile Include="src\grpc\cef_service.pb.cc" />
     <ClCompile Include="src\ipc\BeastWebSocketConnection.cpp" />
     <ClCompile Include="src\ipc\Handshake.cpp" />
     <ClCompile Include="src\ipc\JsonParser.cpp" />
@@ -41,6 +46,11 @@
     <ClInclude Include="inc\core\InvalidConfigException.h" />
     <ClInclude Include="inc\core\Logger.h" />
     <ClInclude Include="inc\core\ProcessController.h" />
+    <ClInclude Include="inc\grpc\CefControlServiceHandler.h" />
+    <ClInclude Include="inc\grpc\CefControlServiceImpl.h" />
+    <ClInclude Include="inc\grpc\CommandQueue.h" />
+    <ClInclude Include="inc\grpc\GrpcServer.h" />
+    <ClInclude Include="inc\grpc\UiCommand.h" />
     <ClInclude Include="inc\ipc\BeastWebSocketConnection.h" />
     <ClInclude Include="inc\ipc\Handshake.h" />
     <ClInclude Include="inc\ipc\IMessageChannel.h" />
@@ -111,6 +121,15 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <VcpkgTriplet>x64-windows</VcpkgTriplet>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <VcpkgTriplet>x64-windows</VcpkgTriplet>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnableManifest>false</VcpkgEnableManifest>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>

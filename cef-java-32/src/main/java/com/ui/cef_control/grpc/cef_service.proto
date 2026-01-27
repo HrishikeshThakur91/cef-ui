@@ -1,0 +1,299 @@
+syntax = "proto3";
+
+package cefcontrol;
+
+option java_package = "com.ui.cef_control.grpc.gen";
+option java_outer_classname = "CefControlProto";
+option java_multiple_files = true;
+
+/**
+ * Phase-6 gRPC IPC Protocol
+ *
+ * MVP Transport Layer for Java ? CEF communication.
+ * Unary RPCs only. No TLS, no auth, no interceptors.
+ * Single CEF client. Localhost only.
+ *
+ * Phase-7 TODO: Add metadata for encryption, signing, token validation.
+ */
+
+/**
+ * Handshake request sent by CEF client on initial connection.
+ * Java validates and responds with HandshakeResponse.
+ */
+message HandshakeRequest {
+  /**
+   * Session token or identifier.
+   * Phase-7 TODO: Placeholder for token validation.
+   */
+  string session_token = 1;
+
+  /**
+   * CEF client version identifier.
+   * Used for protocol negotiation.
+   */
+  string client_version = 2;
+
+  /**
+   * Optional metadata.
+   * Phase-7 TODO: Will carry authentication, encryption params.
+   */
+  map<string, string> metadata = 3;
+}
+
+/**
+ * Handshake response sent by Java.
+ * CEF waits for this before sending other commands.
+ */
+message HandshakeResponse {
+  /**
+   * True if handshake succeeded, false if rejected.
+   */
+  bool success = 1;
+
+  /**
+   * Human-readable status or error message.
+   */
+  string message = 2;
+
+  /**
+   * Java server version identifier.
+   */
+  string server_version = 3;
+
+  /**
+   * Optional metadata.
+   * Phase-7 TODO: Will carry encryption keys, security params.
+   */
+  map<string, string> metadata = 4;
+}
+
+/**
+ * Command to open a page in the CEF browser.
+ * Sent by Java. CEF responds with PageStatusNotification.
+ */
+message OpenPageRequest {
+  /**
+   * Unique command ID for tracking.
+   * Used to correlate with PageStatusNotification responses.
+   */
+  string command_id = 1;
+
+  /**
+   * URL or local path to load in the browser.
+   * Examples: "http://localhost:8080/docs", "file:///path/to/index.html"
+   */
+  string page_url = 2;
+
+  /**
+   * Optional title to display.
+   */
+  string page_title = 3;
+
+  /**
+   * Optional metadata (e.g., display options, context data).
+   * Phase-7 TODO: Will carry rendering hints, security context.
+   */
+  map<string, string> metadata = 4;
+}
+
+/**
+ * Command response acknowledging OpenPageRequest received.
+ * Sent immediately after OpenPageRequest is processed.
+ */
+message OpenPageResponse {
+  /**
+   * Echo the command_id from OpenPageRequest.
+   */
+  string command_id = 1;
+
+  /**
+   * True if the request was accepted for processing.
+   */
+  bool accepted = 2;
+
+  /**
+   * Status or error message.
+   */
+  string message = 3;
+}
+
+/**
+ * Status notification about page load/render progress.
+ * CEF sends these asynchronously after OpenPageRequest.
+ * Java may receive multiple of these for a single page.
+ */
+message PageStatusNotification {
+  /**
+   * Correlates with command_id from OpenPageRequest.
+   * Allows Java to track which page this status refers to.
+   */
+  string command_id = 1;
+
+  /**
+   * Current status: e.g., "LOADING", "LOADED", "ERROR", "READY"
+   * Phase-7 TODO: Define enum for page states.
+   */
+  string status = 2;
+
+  /**
+   * Optional error or detail message.
+   */
+  string message = 3;
+
+  /**
+   * Page load progress 0-100 (if applicable).
+   * -1 if not applicable.
+   */
+  int32 progress_percent = 4;
+
+  /**
+   * Timestamp when this status was generated (milliseconds since epoch).
+   */
+  int64 timestamp_millis = 5;
+
+  /**
+   * Optional metadata.
+   * Phase-7 TODO: Will carry rendered content hash, security events, etc.
+   */
+  map<string, string> metadata = 6;
+}
+
+/**
+ * Query current page status synchronously.
+ * Java sends this to CEF to get real-time page state.
+ */
+message PageStatusRequest {
+  /**
+   * Correlates with command_id from OpenPageRequest.
+   * Allows Java to query status of a specific page.
+   */
+  string command_id = 1;
+}
+
+/**
+ * Page status response from CEF.
+ * Sent synchronously in response to PageStatusRequest.
+ */
+message PageStatusResponse {
+  /**
+   * Echo the command_id from PageStatusRequest.
+   */
+  string command_id = 1;
+
+  /**
+   * Current status: e.g., "LOADING", "LOADED", "ERROR", "READY"
+   * Phase-7 TODO: Define enum for page states.
+   */
+  string status = 2;
+
+  /**
+   * Optional error or detail message.
+   */
+  string message = 3;
+
+  /**
+   * Page load progress 0-100 (if applicable).
+   * -1 if not applicable.
+   */
+  int32 progress_percent = 4;
+
+  /**
+   * Timestamp when this status was generated (milliseconds since epoch).
+   */
+  int64 timestamp_millis = 5;
+
+  /**
+   * Optional metadata.
+   * Phase-7 TODO: Will carry rendered content hash, security events, etc.
+   */
+  map<string, string> metadata = 6;
+}
+
+/**
+ * Shutdown command sent by Java to gracefully close CEF.
+ * Phase-7 TODO: Not required for MVP; placeholder for future use.
+ */
+message ShutdownRequest {
+  /**
+   * Reason for shutdown (e.g., "NORMAL", "ERROR", "RESTART").
+   */
+  string reason = 1;
+
+  /**
+   * Timeout in seconds for CEF to gracefully exit.
+   */
+  int32 timeout_secs = 2;
+}
+
+/**
+ * Shutdown acknowledgement from CEF.
+ * Phase-7 TODO: Not required for MVP; placeholder for future use.
+ */
+message ShutdownResponse {
+  bool acknowledged = 1;
+  string message = 2;
+}
+
+/**
+ * Phase-6 gRPC Service
+ *
+ * Single unary RPC per command type.
+ * CEF is client. Java is server.
+ *
+ * All methods are unary (request ? response).
+ * No streaming, no bidirectional communication at gRPC level.
+ *
+ * Phase-7 TODO: Consider adding streaming for high-frequency events (metrics, logs).
+ */
+service CefControlService {
+  /**
+   * Handshake RPC.
+   * CEF initiates this on connection.
+   * Java validates and accepts/rejects the session.
+   *
+   * This MUST be the first RPC called by CEF.
+   */
+  rpc Handshake(HandshakeRequest) returns (HandshakeResponse);
+
+  /**
+   * Open Page RPC.
+   * Java sends OpenPageRequest.
+   * CEF responds immediately with OpenPageResponse (accepted or rejected).
+   *
+   * CEF then asynchronously sends PageStatusNotification messages
+   * (via a separate callback mechanism or polling).
+   *
+   * Phase-7 TODO: Implement notification delivery (polling or push).
+   */
+  rpc OpenPage(OpenPageRequest) returns (OpenPageResponse);
+
+  /**
+   * Query Page Status RPC.
+   * Java sends PageStatusRequest to CEF.
+   * CEF responds immediately with current PageStatusResponse.
+   *
+   * Used to poll current page load state synchronously.
+   * Phase-7 TODO: Add polling mechanism for continuous updates.
+   */
+  rpc PageStatus(PageStatusRequest) returns (PageStatusResponse);
+
+  /**
+   * Shutdown RPC.
+   * Java instructs CEF to terminate.
+   *
+   * Phase-7 TODO: Not required for MVP.
+   */
+  rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+}
+
+/**
+ * Phase-7 TODO Hooks:
+ *
+ * 1. Add EncryptionMetadata message for TLS-less encryption.
+ * 2. Add AuthenticationToken message for token validation.
+ * 3. Add ServerMetadata and ClientMetadata messages for capability negotiation.
+ * 4. Add streaming RPC for high-frequency events (NotificationStream).
+ * 5. Add interceptor hooks for auth, metrics, logging.
+ * 6. Add error codes and structured exceptions.
+ * 7. Add metrics collection (latency, throughput, error rates).
+ */

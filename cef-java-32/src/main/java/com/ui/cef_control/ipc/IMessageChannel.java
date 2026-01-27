@@ -1,5 +1,7 @@
 package com.ui.cef_control.ipc;
 
+import java.io.IOException;
+
 /**
  * Message channel contract defining outbound message direction.
  *
@@ -15,4 +17,16 @@ public interface IMessageChannel {
 	void send(String message);
 
 	void close();
+
+	/**
+	 * Query page status synchronously.
+	 * Must be called only after successful OpenPage command.
+	 * Blocks until response received or timeout occurs.
+	 *
+	 * @param commandId the command ID from OpenPageResponse
+	 * @return page status response with current state
+	 * @throws IOException if RPC fails
+	 * @throws IllegalStateException if handshake not completed
+	 */
+	void queryPageStatus(String commandId) throws IOException;
 }

@@ -166,6 +166,170 @@ Exit condition:
 - No JNI, no JS, no browser assumptions
 
 -----------------------------------------------------------------------
+
+# java-phase6-integration-tdd.md
+
+## 1. Purpose
+
+This document defines the **Java-side Technical Design** for **Phase-6 (Functional Integration)** of the Java ↔ CEF system.
+
+### Scope
+- Phase-6 ONLY
+- Functional wiring and orchestration
+- Activation of existing Phase-1–5 abstractions
+
+### Explicit Non-Goals
+- No security
+- No hardening
+- No production readiness
+- No redesign of earlier phases
+
+Phase-7 will exclusively handle:
+- TLS / WSS
+- Authentication / tokens
+- Signing / checksums
+- Observability / metrics
+- Packaging / distribution
+- Single-instance enforcement
+
+---
+
+## 2. Frozen Inputs (Authoritative)
+
+The following are **immutable and MUST NOT be modified**:
+- Phase-1–5 abstractions
+- Process model decisions
+- IPC envelope format
+- Authority boundaries
+
+Any change request affecting these is **out of scope**.
+
+---
+
+## 3. Authority Model
+
+### Java (Control Plane)
+Java is the **single authority** for:
+- UI behavior
+- Navigation
+- Context resolution
+- Process lifecycle
+- Recovery decisions
+- IPC server lifecycle
+- VuePress server lifecycle
+
+### CEF
+- Render-only UI process
+- Executes commands issued by Java
+- Owns no business logic
+- Owns no navigation logic
+
+### JavaScript (CEF)
+- Render-only
+- No business decisions
+- No navigation control
+- No IPC command authority
+
+---
+
+## 4. Process Model
+
+### Architecture
+- Java and CEF run as **separate OS processes**
+- CEF is always spawned as a **child process of Java**
+
+### Lifecycle Rules
+| Event | Behavior |
+|---|---|
+| Java exits | CEF exits immediately |
+| User closes CEF | CEF exits; Java does nothing |
+| CEF crashes | Java relaunches CEF |
+| Java restarts | CEF must exit |
+
+### Constraints
+- CEF relaunch occurs **only** on explicit Java logic
+- Multiple CEF instances are prevented by **convention only**
+- No OS locks or mutexes (Phase-7 concern)
+
+---
+
+## 5. VuePress Documentation Hosting
+
+### Content Model
+- VuePress content is **prebuilt static files**
+- No runtime VuePress build
+- No dynamic content generation
+
+### Java Responsibilities
+- Host content via embedded HTTP server
+- Bind server to `127.0.0.1`
+- Use an **ephemeral port**
+- Restart server on crash
+- Notify CEF before and after restart
+
+### URL Contract
+
+http://127.0.0.1:<port>/
+
+
+### Restart Semantics
+1. Server crash detected
+2. Java restarts server
+3. Java sends `DOCS_RESTARTING`
+4. Java sends `DOCS_READY` with new URL
+
+No HTTPS. No caching or compression tuning.
+
+---
+
+## 6. IPC Transport (Phase-6)
+
+### Transport
+- Local TCP
+- Bound to `127.0.0.1`
+- Port selected by Java
+- Passed to CEF via argv
+- Single CEF client only
+
+### Communication Model
+- Request → Response
+- Explicit command correlation
+- No streaming
+- No multiplexing
+
+---
+
+## 7. IPC Protocol
+
+### Mandatory JSON Envelope
+```json
+{
+  "protocolVersion": "1.0",
+  "commandId": "uuid",
+  "command": "COMMAND_NAME",
+  "headers": {},
+  "payload": {}
+}
+
+
+---
+
+### ✅ What You Have Now
+- A **final Java Phase-6 TDD**
+- A **hard compliance checklist** suitable for PR reviews
+- A **Phase-7 firewall** baked into the document
+
+---
+
+### Next Logical Steps (Your Call)
+1. Generate **CEF-side Phase-6 TDD** to match this
+2. Generate **Java package-level TODO map** referencing this TDD
+3. Start **Java class-by-class implementation walkthrough**
+
+Tell me what you want next — we stay locked and disciplined.
+
+
+-----------------------------------------------------------------------
 						Commit Messages 
 -----------------------------------------------------------------------
 ✅ Phase 1 — Configuration & Contracts

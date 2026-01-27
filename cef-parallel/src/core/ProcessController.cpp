@@ -4,9 +4,13 @@
 namespace cef_ui {
 namespace core {
 
-ProcessController::ProcessController()
-    : state_(ProcessState::Idle),
-      listeners_() {}
+ProcessController::ProcessController(uint16_t port, const std::string& session_token)
+    : port_(port),
+      session_token_(session_token),
+      state_(ProcessState::Idle),
+      listeners_() {
+      grpc_server_ = std::make_unique<cef_ui::grpc_server::GrpcServer>(session_token_);
+}
 
 void ProcessController::Start() {
   if (state_ != ProcessState::Idle) {
@@ -14,6 +18,17 @@ void ProcessController::Start() {
   }
 
   state_ = ProcessState::Starting;
+  
+  // Phase 6.2: Start gRPC server
+  if (grpc_server_) {
+      bool success = grpc_server_->Start(port_);
+      if (!success) {
+          state_ = ProcessState::Idle;
+          // In deterministic mode we throw
+          throw std::runtime_error("Failed to start gRPC server");
+      }
+  }
+
   state_ = ProcessState::Started;
   EmitStarted();
 }
@@ -28,10 +43,19 @@ void ProcessController::Shutdown() {
   if (state_ == ProcessState::Started) {
     state_ = ProcessState::Stopping;
     EmitStopping();
+
+    // Phase 6.2: Stop gRPC server
+    if (grpc_server_) {
+        grpc_server_->Stop();
+    }
+
     state_ = ProcessState::Stopped;
     EmitStopped();
   } else {
     // If in Idle or other states, just transition to Stopped without events
+    if (grpc_server_) {
+         grpc_server_->Stop();
+    }
     state_ = ProcessState::Stopped;
   }
 }

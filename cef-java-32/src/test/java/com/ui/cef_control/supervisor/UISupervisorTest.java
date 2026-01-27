@@ -1,7 +1,7 @@
 package com.ui.cef_control.supervisor;
 
-//import com.anca.appl.fw.gui.cef_control.lifecycle.LifecycleListener;
-//import com.anca.appl.fw.gui.cef_control.lifecycle.ProcessController;
+//import com.ui.cef_control.lifecycle.LifecycleListener;
+//import com.ui.cef_control.lifecycle.ProcessController;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;

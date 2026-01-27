@@ -10,6 +10,12 @@
 /cef-ui/x64/*
 /x64/*
 
+/cef-parallel/cef-ui.vcxproj.user
+/.vs/cef-parallel/CopilotIndices/17.14.1530.14912
+/.vs/cef-parallel/FileContentIndex
+/cef-parallel/x64/*
+cef-parallel/cef-parallel.vcxproj.user
+
 /packages
 
 .vs/*
@@ -22,3 +28,27 @@ cef-java-32/.idea/
 cef-java-32/java-ui-bridge.iml
 cef-java-32/.idea_modules/
 cef-parallel/cef-parallel.vcxproj.user
+
+# Ignore IDEA project files
+/cef-java-32/.idea/*
+
+# Java ignoered files
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+*.ipr
+*.iws
+/out/
+/build/
+/target/
+/.classpath
+/.project
+/.settings/
+/.idea/
+.DS_Store
+*.log
+*.tmp
+*.swp
+*.swo

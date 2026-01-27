@@ -32,6 +32,9 @@
     <ClCompile Include="src\ipc\test_wss_connection_manager.cpp">
       <Filter>src\ipc</Filter>
     </ClCompile>
+    <ClCompile Include="src\grpc\test_grpc_server.cpp">
+      <Filter>src\grpc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -60,6 +63,9 @@
     </Filter>
     <Filter Include="src\support">
       <UniqueIdentifier>{77724918-9f8c-4beb-a76f-a0a1ed3fcbe8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\grpc">
+      <UniqueIdentifier>{0e148061-46a1-4529-9f42-8f414704a072}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -1,9 +1,10 @@
 # REQUEST TYPE: <Design Review | Implementation Guidance | Copilot Command | Debugging>
 
 PHASE:
+
 - Language: C++ | Java
 - Phase Number: X
-- Phase Name: <as per cef-ui-tdd or agreed stories>
+- Phase Name: ``` <as per cef-ui-tdd or agreed stories> ```
 
 REFERENCE FILES:
 - <list of md / cpp / java files involved>
@@ -132,4 +133,129 @@ REFERENCE DOCUMENT:
 Disallowed actions:
   - Rewrite phases
   - Add new requirements
+
+--------------------------------------------------------------------------------------
+
+## Phase 6 Design & Implementation Planning
+
+### Context (frozen):
+- Phase 1–5 is COMPLETE and frozen on both Java and CEF (C++) sides.
+- Phase 5 Java side provides lifecycle supervision only (no IPC, no command replay, no UI logic).
+- Phase 5 CEF side owns window creation, browser lifecycle, renderer lifecycle.
+- Phase 7 is explicitly reserved for security hardening, resilience, production readiness, observability, and ops.
+
+🎯 First Goal of this chat - Design and plan Phase 6, whose responsibility is:
+- All functional communication and IPC between Java and CEF, including application launch, command routing, page navigation, and crash-tolerant behavior.
+
+### By the end of Phase 6:
+- Java and CEF are fully functionally connected
+- UI behavior is driven by Java
+- CEF UI is restartable, redirectable, and resilient
+- Phase 7 contains only hardening (no new behavior)
+
+### 🚧 Hard boundaries (must not be violated)
+- No Phase-7 concerns (security, auth, TLS hardening, production packaging)
+- No premature optimization
+- No reworking Phase 1–5 abstractions
+- No mixing supervision logic back into Phase 6
+- No “just for now” hacks
+If something feels like Phase 7 → explicitly defer it.
+
+### 🧩 Phase 6 responsibilities to design
+#### 1️⃣ VuePress Server Lifecycle
+- Decide who owns running the VuePress localhost server
+	- Likely Java-side responsibility
+	- Java should:
+		- launch the server
+		- monitor crashes
+		- restart silently
+- Clarify:
+	- startup timing
+	- health checks
+	- restart policy
+	- when CEF should attempt to load pages
+
+#### 2️⃣ CEF Application Launch (Java → Native)
+- Java must be able to launch the CEF application
+- CEF window:
+	- can be closed by user
+	- can run independently in background
+- Java must be able to:
+	- detect if CEF is already running
+	- bring it to foreground OR relaunch
+- CEF exe path:
+	- NOT finalized now
+	- abstraction required
+	- wiring later (Phase 7)
+
+#### 3️⃣ IPC Initialization Strategy
+- Define:
+	- how IPC is established
+	- who initiates handshake
+	- message directionality
+- Must support:
+	- Java → CEF commands
+	- CEF → Java error/status messages
+- Must be restart-safe:
+	- CEF crash → Java recovers
+	- Java restart → CEF re-handshakes
+
+#### 4️⃣ Core Use Cases to Support
+* A. Documentation Launch (Button Click)
+	- Existing Java button triggers:
+		- Java launches CEF (if not running)
+		- VuePress documentation opens in CEF
+	- Replaces current PDF-based flow
+* B. Contextual Help (Right-click → Show Help)
+	- Java collects context data (JSON)
+	- Java sends context payload to CEF
+	- CEF determines:
+		- exact VuePress page to open
+	- Behavior rules:
+		- If CEF not running → launch
+		- If running → redirect page
+		- If page not found → fallback page
+	- On failure:
+		- CEF must notify Java
+		- User should NOT be disturbed
+
+#### 5️⃣ Mapping & Routing Strategy
+- VuePress repo must be parsed to build:
+	- help-context → page mapping
+- Decide:
+	- where mapping lives (Java vs CEF)
+	- when mapping is loaded
+	- how it is updated
+	- No manual hardcoding per page
+
+#### Design questions to resolve in this chat
+The assistant should:
+- Ask clarifying questions before suggesting code
+- Explicitly label:
+	- Phase-6 decision
+	- Deferred Phase-7 decision
+- Produce:
+	- Phase-6 architecture diagram (conceptual)
+	- Clear responsibility split (Java vs CEF)
+	- Step-by-step implementation plan
+	- IPC message contract (initial version)
+
+#### Expected outputs of this chat
+By the end of this chat, we should have:
+	- Final Phase-6 responsibility matrix
+	- Decision on VuePress server ownership
+	- Decision on CEF launch model
+	- IPC handshake + message flow
+	- Contextual help routing design
+	- Clear “out of scope until Phase 7” list
+	- Ordered implementation steps for Phase 6
+
+## Important instruction to assistant:
+- Stay disciplined.
+- Ask before assuming.
+- Phase-6 only.
+- No drift.
+
+--------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
 
