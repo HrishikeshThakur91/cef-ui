@@ -35,6 +35,16 @@
     <ClCompile Include="src\grpc\test_grpc_server.cpp">
       <Filter>src\grpc</Filter>
     </ClCompile>
+    <ClCompile Include="src\grpc\cef_service.grpc.pb.cc" />
+    <ClCompile Include="src\grpc\cef_service.pb.cc" />
+    <ClCompile Include="src\grpc\CefControlServiceImpl.cpp" />
+    <ClCompile Include="src\grpc\GrpcServer.cpp" />
+    <ClCompile Include="src\grpc\test_ui_command.cpp">
+      <Filter>src\grpc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\grpc\test_command_queue.cpp">
+      <Filter>src\grpc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

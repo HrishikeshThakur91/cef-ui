@@ -35,6 +35,12 @@
     <Filter Include="src\grpc">
       <UniqueIdentifier>{a49c55c0-756e-4277-9585-3e6c8bf3a741}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\renderer">
+      <UniqueIdentifier>{a85937df-19f4-4e42-8e25-21fb77c6290a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="inc\renderer">
+      <UniqueIdentifier>{67e4b0ba-b206-45f5-bee3-c3978f9ce5bf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\cef-ui.cpp">
@@ -87,6 +93,12 @@
     </ClCompile>
     <ClCompile Include="src\grpc\cef_service.pb.cc">
       <Filter>src\grpc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\CefRenderDelegate.cpp">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\CefV8HandlerImpl.cpp">
+      <Filter>src\renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -164,6 +176,18 @@
     </ClInclude>
     <ClInclude Include="inc\grpc\CommandQueue.h">
       <Filter>inc\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\grpc\cef_service.grpc.pb.h">
+      <Filter>inc\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\grpc\cef_service.pb.h">
+      <Filter>inc\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\renderer\CefRenderDelegate.h">
+      <Filter>inc\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\renderer\CefV8HandlerImpl.h">
+      <Filter>inc\renderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

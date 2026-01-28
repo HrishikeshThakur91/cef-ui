@@ -32,6 +32,12 @@ public class GrpcIpcServer {
 	private volatile boolean running;
 
 	/**
+	 * Phase-6.3: Status callback service implementation.
+	 * Receives status notifications from CEF.
+	 */
+	private final CefStatusCallbackServiceImpl statusCallbackService;
+
+	/**
 	 * Creates a gRPC IPC server instance.
 	 *
 	 * @param port the port to bind to on localhost (e.g., 50051)
@@ -44,6 +50,7 @@ public class GrpcIpcServer {
 		this.port = port;
 		this.server = new AtomicReference<>(null);
 		this.running = false;
+		this.statusCallbackService = new CefStatusCallbackServiceImpl();
 	}
 
 	/**
@@ -68,9 +75,11 @@ public class GrpcIpcServer {
 			// Phase-7 TODO: Add max concurrent streams limit here.
 
 			Server newServer = ServerBuilder.forPort(port)
-					// Register service implementation
-					// Phase-6 MVP: Service stub added here by wiring code
+					// Register service implementations
+					// Phase-6: CefControlService (CEF calls Java)
 					.addService(new CefControlServiceImpl())
+					// Phase-6.3: CefStatusCallbackService (CEF sends status to Java)
+					.addService(statusCallbackService)
 					.build()
 					.start();
 
@@ -157,6 +166,18 @@ public class GrpcIpcServer {
 	}
 
 	/**
+	 * Returns the status callback service instance.
+	 *
+	 * Phase-6.3: Used for diagnostics and testing.
+	 * Allows querying stored status events.
+	 *
+	 * @return the CefStatusCallbackServiceImpl instance
+	 */
+	public CefStatusCallbackServiceImpl getStatusCallbackService() {
+		return statusCallbackService;
+	}
+
+	/**
 	 * Phase-6 MVP Constraints:
 	 *
 	 * - Single CEF client only: Enforced at the service implementation level.
@@ -169,12 +190,20 @@ public class GrpcIpcServer {
 	 * - No authentication: Phase-7 feature. Handshake validation is done
 	 *   at the RPC handler level, not at the transport level.
 	 *
-	 * - Unary RPCs only: No streaming. Each RPC is request?response.
+	 * - Unary RPCs only: No streaming. Each RPC is request→response.
 	 *
 	 * - No interceptors: Phase-7 feature.
 	 *
 	 * - No retry logic: Client retries are client's responsibility.
 	 *
 	 * - No metrics: Phase-7 feature.
+	 *
+	 * Phase-6.3 Additions:
+	 *
+	 * - Bidirectional services: Java implements both CefControlService (CEF calls Java)
+	 *   and CefStatusCallbackService (CEF sends status to Java).
+	 *
+	 * - Status reception: Java receives and logs status notifications from CEF.
+	 *   NO decision-making or retry logic based on status (Phase-7).
 	 */
 }

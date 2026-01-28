@@ -37,6 +37,7 @@ namespace cef_ui {
         /// - Deterministic (no OS calls, no threads)
         class ProcessController {
         public:
+            ProcessController();
             ~ProcessController() = default;
 
             // Non-copyable for clarity of ownership

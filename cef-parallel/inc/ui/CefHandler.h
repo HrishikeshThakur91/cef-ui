@@ -8,6 +8,7 @@
 #include <list>
 
 #include "include/cef_client.h"
+#include "../../cef-parallel/inc/ui/CefNativeAppl.h"
 
 #include "CefUiBridgeImpl.h"
 
@@ -20,7 +21,7 @@ namespace cef_ui {
             public CefLifeSpanHandler,
             public CefLoadHandler {
         public:
-            explicit CefHandler(bool is_alloy_style, CefUiBridgeImpl* bridge);
+            explicit CefHandler(bool is_alloy_style, CefUiBridgeImpl* bridge, CefNativeAppl* app_handler = nullptr);
             ~CefHandler() override;
 
             // Provide access to the single global instance of this object.
@@ -41,11 +42,20 @@ namespace cef_ui {
             void OnBeforeClose(CefRefPtr<CefBrowser> browser) override;
 
             // CefLoadHandler methods:
+            void OnLoadEnd(CefRefPtr<CefBrowser> browser,
+                CefRefPtr<CefFrame> frame,
+                int httpStatusCode) override;
             void OnLoadError(CefRefPtr<CefBrowser> browser,
                 CefRefPtr<CefFrame> frame,
                 ErrorCode errorCode,
                 const CefString& errorText,
                 const CefString& failedUrl) override;
+            
+            // CefClient methods:
+            bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
+                                          CefRefPtr<CefFrame> frame,
+                                          CefProcessId source_process,
+                                          CefRefPtr<CefProcessMessage> message) override;
 
             void ShowMainWindow();
 
@@ -70,6 +80,7 @@ namespace cef_ui {
             bool is_closing_ = false;
 
             CefUiBridgeImpl* uiBridge_; // NOT owning
+            CefNativeAppl* app_handler_; // NOT owning (Phase 6.3)
 
             // Include the default reference counting implementation.
             IMPLEMENT_REFCOUNTING(CefHandler);

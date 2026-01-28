@@ -235,6 +235,29 @@ message ShutdownResponse {
 }
 
 /**
+ * Acknowledgement for status notifications.
+ * Java sends this to CEF after receiving PageStatusNotification.
+ * Phase-6.3: Minimal acknowledgement only.
+ */
+message StatusAck {
+  /**
+   * Echo the command_id from the notification.
+   */
+  string command_id = 1;
+
+  /**
+   * True if the notification was received and processed successfully.
+   */
+  bool received = 2;
+
+  /**
+   * Optional error message if processing failed.
+   */
+  string error_message = 3;
+}
+
+
+/**
  * Phase-6 gRPC Service
  *
  * Single unary RPC per command type.
@@ -284,6 +307,37 @@ service CefControlService {
    * Phase-7 TODO: Not required for MVP.
    */
   rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+}
+
+/**
+ * Phase-6.3 Status Callback Service
+ *
+ * This service is IMPLEMENTED BY JAVA and CALLED BY CEF.
+ * Reverses the normal client/server roles for status notifications.
+ *
+ * CEF calls this service to push status updates to Java asynchronously.
+ * Java logs and stores these status events.
+ *
+ * Phase-7 TODO: Add streaming for high-frequency status updates.
+ */
+service CefStatusCallbackService {
+  /**
+   * Notify Page Status RPC.
+   * CEF sends PageStatusNotification to Java.
+   * Java responds with StatusAck.
+   *
+   * Called by CEF when:
+   * - Page starts loading (status="LOADING")
+   * - Page finishes loading (status="LOADED")
+   * - Page encounters error (status="ERROR")
+   * - Browser is closing (status="SHUTDOWN")
+   *
+   * Java MUST NOT block or perform long operations in this handler.
+   * Java MUST log the status and return immediately.
+   *
+   * Phase-7 TODO: Add authentication and encryption.
+   */
+  rpc NotifyPageStatus(PageStatusNotification) returns (StatusAck);
 }
 
 /**

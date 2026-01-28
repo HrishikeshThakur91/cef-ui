@@ -27,6 +27,8 @@
     <ClCompile Include="src\grpc\GrpcServer.cpp" />
     <ClCompile Include="src\grpc\cef_service.grpc.pb.cc" />
     <ClCompile Include="src\grpc\cef_service.pb.cc" />
+    <ClCompile Include="src\renderer\CefRenderDelegate.cpp" />
+    <ClCompile Include="src\renderer\CefV8HandlerImpl.cpp" />
     <ClCompile Include="src\ipc\BeastWebSocketConnection.cpp" />
     <ClCompile Include="src\ipc\Handshake.cpp" />
     <ClCompile Include="src\ipc\JsonParser.cpp" />
@@ -61,10 +63,14 @@
     <ClInclude Include="inc\ipc\MessageTypes.h" />
     <ClInclude Include="inc\ipc\WebSocketTransport.h" />
     <ClInclude Include="inc\ipc\WssConnectionManager.h" />
+    <ClInclude Include="inc\renderer\CefRenderDelegate.h" />
+    <ClInclude Include="inc\renderer\CefV8HandlerImpl.h" />
     <ClInclude Include="inc\ui\CefNativeAppl.h" />
     <ClInclude Include="inc\ui\CefHandler.h" />
     <ClInclude Include="inc\ui\CefUiBridge.h" />
     <ClInclude Include="inc\ui\CefUiBridgeImpl.h" />
+    <ClInclude Include="src\grpc\cef_service.grpc.pb.h" />
+    <ClInclude Include="src\grpc\cef_service.pb.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -200,8 +206,8 @@
       <Command>"$(SolutionDir)docs\copy-cef.bat" "$(SolutionDir)packages\cef.runtime.win-x64.143.0.7499.170" "$(SolutionDir)$(Platform)\$(Configuration)\" "$(Configuration)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>
-      </Command>
+      <Command>"$(ProjectDir)generate_proto.bat"</Command>
+      <Message>Generating C++ proto files from cef_service.proto</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

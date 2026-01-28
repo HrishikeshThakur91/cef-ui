@@ -1,6 +1,5 @@
 #include "pch.h"
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
 #include <memory>
 #include <thread>
 #include <grpcpp/grpcpp.h>
@@ -137,8 +136,8 @@ TEST_F(GrpcServerTest, OpenPageAcceptedAfterHandshake) {
     
     EXPECT_TRUE(status.ok());
     EXPECT_TRUE(response.accepted());
-    // Phase 6.2 specific check: Not executed
-    EXPECT_NE(response.message().find("Phase 6.2: not executed"), std::string::npos);
+    // Phase 6.3: Command should be accepted and queued for execution
+    EXPECT_NE(response.message().find("accepted and queued for execution"), std::string::npos);
     EXPECT_EQ(response.command_id(), "cmd2");
 }
 
@@ -184,14 +183,8 @@ TEST_F(GrpcServerTest, PageStatusMaintainsPlaceholder) {
 // Test: Shutdown Logic (Phase 6.2 Stub)
 // ============================================================================
 
-TEST_F(GrpcServerTest, ShutdownAcknowledgedButNotExecuted) {
-    // Shutdown doesn't strictly require handshake in current impl? 
-    // Checking CefControlServiceImpl.cpp: It does NOT check handshake_completed_ for Shutdown.
-    // This allows force shutdown even if handshake failed? Or allows shutdown from unconnected client? 
-    // Impl specific: Handshake logic check is missing in Shutdown(). 
-    // This might be intentional or oversight. Phase 6.2 doesn't specify strict auth for Shutdown, 
-    // but usually control commands should be authenticated.
-    // However, existing impl accepts it. Testing existing behavior.
+TEST_F(GrpcServerTest, ShutdownAcknowledgedAndQueued) {
+    // Phase 6.3: Shutdown creates command and posts to UI thread
     
     ClientContext context;
     ShutdownRequest request;
@@ -201,5 +194,5 @@ TEST_F(GrpcServerTest, ShutdownAcknowledgedButNotExecuted) {
     
     EXPECT_TRUE(status.ok());
     EXPECT_TRUE(response.acknowledged());
-    EXPECT_NE(response.message().find("Phase 6.2: not executed"), std::string::npos);
+    EXPECT_NE(response.message().find("acknowledged and queued for execution"), std::string::npos);
 }

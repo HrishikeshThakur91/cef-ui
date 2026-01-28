@@ -57,7 +57,8 @@
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(SolutionDir)cef-ui-tests\inc;$(SolutionDir)cef-ui\inc;$(SolutionDir)cef-parallel\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)cef-ui-tests\inc;$(SolutionDir)cef-parallel\inc;$(SolutionDir)cef-parallel\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -87,8 +88,9 @@
       <PreprocessorDefinitions>X64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(SolutionDir)cef-parallel\inc;$(SolutionDir)cef-ui-tests\inc;$(SolutionDir)cef-ui\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)cef-parallel\inc;$(SolutionDir)cef-parallel\src;$(SolutionDir)cef-ui-tests\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -116,7 +118,9 @@
     <ClCompile Include="src\grpc\cef_service.pb.cc" />
     <ClCompile Include="src\grpc\CefControlServiceImpl.cpp" />
     <ClCompile Include="src\grpc\GrpcServer.cpp" />
+    <ClCompile Include="src\grpc\test_command_queue.cpp" />
     <ClCompile Include="src\grpc\test_grpc_server.cpp" />
+    <ClCompile Include="src\grpc\test_ui_command.cpp" />
     <ClCompile Include="src\ipc\test_handshake.cpp" />
     <ClCompile Include="src\ipc\test_message_types.cpp" />
     <ClCompile Include="src\ipc\test_websocket_transport.cpp" />
@@ -130,6 +134,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\cef-parallel\cef-parallel.vcxproj">
+      <Project>{0202B4CE-190B-40CE-8900-35DAD1F93FE5}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\cef-ui\cef-ui.vcxproj">
       <Project>{c4f7d2ca-eca7-48aa-92c6-efa9cc129336}</Project>
     </ProjectReference>

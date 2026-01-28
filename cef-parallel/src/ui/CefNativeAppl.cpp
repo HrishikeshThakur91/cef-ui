@@ -1,8 +1,7 @@
 // Copyright (c) 2013 The Chromium Embedded Framework Authors. All rights
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
-
-#include "../../cef-parallel/inc/ui/CefNativeAppl.h"
+#pragma once
 
 #include <string>
 #include <iostream>
@@ -14,8 +13,11 @@
 #include "include/wrapper/cef_helpers.h"
 #include "include/wrapper/cef_closure_task.h"
 #include "include/base/cef_callback.h"
+
 #include "../../cef-parallel/inc/ui/CefHandler.h"
-#include "../../cef-parallel/inc/grpc/UiCommand.h"
+#include "../../cef-parallel/inc/grpc/UiCommand.h"  
+#include "../../cef-parallel/inc/ui/CefNativeAppl.h"
+#include "../../cef-parallel/inc/renderer/CefRenderDelegate.h"
 
 
 namespace cef_ui {
@@ -105,7 +107,10 @@ namespace cef_ui {
             DISALLOW_COPY_AND_ASSIGN(BrowserViewDelegate);
         };
 
-        CefNativeAppl::CefNativeAppl() = default;
+        CefNativeAppl::CefNativeAppl() {
+            // Phase 6.3 Step 2: Create render delegate for JS bindings
+            render_delegate_ = new cef_ui::renderer::CefRenderDelegate();
+        }
 
         CefNativeAppl::~CefNativeAppl() {
             // Stop gRPC server before CEF shutdown
@@ -157,7 +162,7 @@ namespace cef_ui {
             }
 
             // CefHandler implements browser-level callbacks.
-            CefRefPtr<CefHandler> handler(new CefHandler(use_alloy_style, &g_uiBridge));
+            CefRefPtr<CefHandler> handler(new CefHandler(use_alloy_style, &g_uiBridge, this));
 
             // Specify CEF browser settings here.
             CefBrowserSettings browser_settings;
@@ -220,13 +225,14 @@ namespace cef_ui {
                 // Create the first browser window.
                 CefBrowserHost::CreateBrowser(window_info, handler, url, browser_settings,
                     nullptr, nullptr);
+                // Note: Browser reference will be stored in OnAfterCreated callback
             }
         }
 
         void CefNativeAppl::ProcessPendingCommands() {
             CEF_REQUIRE_UI_THREAD();
 
-            // Phase 6.2 Step 5: Dequeue and log commands (NO EXECUTION)
+            // Phase 6.3 Step 1: Dequeue and EXECUTE commands using native CEF APIs
             if (!grpc_server_ || !grpc_server_->IsRunning()) {
                 return;  // Server stopped, no more processing
             }
@@ -243,15 +249,37 @@ namespace cef_ui {
                 switch (cmd.GetType()) {
                     case cef_ui::grpc_server::CommandType::OPEN_PAGE: {
                         if (const auto* open_page = cmd.AsOpenPage()) {
-                            std::cout << "[CefNativeAppl] Received OPEN_PAGE command: "
-                                      << "command_id=" << open_page->command_id
-                                      << ", url=" << open_page->url
-                                      << " (NOT EXECUTED - Phase 6.2)" << std::endl;
+                            std::cout << "[CefNativeAppl] ========== Executing OPEN_PAGE Command ==========" << std::endl;
+                            std::cout << "[CefNativeAppl] command_id: " << open_page->command_id << std::endl;
+                            std::cout << "[CefNativeAppl] url: " << open_page->url << std::endl;
+                            
+                            // Execute: Navigate browser to URL using native CEF API
+                            if (browser_ && browser_->GetMainFrame()) {
+                                browser_->GetMainFrame()->LoadURL(open_page->url);
+                                std::cout << "[CefNativeAppl] Browser navigation INITIATED: " << open_page->url << std::endl;
+                                std::cout << "[CefNativeAppl] (Load completion will be logged in OnLoadEnd)" << std::endl;
+                            } else {
+                                std::cerr << "[CefNativeAppl] FAILED: Browser not available" << std::endl;
+                            }
+                            std::cout << "[CefNativeAppl] ====================================================" << std::endl;
                         }
                         break;
                     }
                     case cef_ui::grpc_server::CommandType::SHUTDOWN: {
-                        std::cout << "[CefNativeAppl] Received SHUTDOWN command (NOT EXECUTED - Phase 6.2)" << std::endl;
+                        std::cout << "[CefNativeAppl] ========== Executing SHUTDOWN Command ==========" << std::endl;
+                        
+                        // Execute: Close browser cleanly
+                        if (browser_) {
+                            browser_->GetHost()->CloseBrowser(false);  // false = allow close handlers to run
+                            std::cout << "[CefNativeAppl] Browser close INITIATED" << std::endl;
+                            std::cout << "[CefNativeAppl] (Shutdown will complete in OnBeforeClose)" << std::endl;
+                            // Note: CefQuitMessageLoop will be called in OnBeforeClose handler
+                        } else {
+                            std::cerr << "[CefNativeAppl] FAILED: Browser not available, quitting directly" << std::endl;
+                            // If no browser, quit directly
+                            CefQuitMessageLoop();
+                        }
+                        std::cout << "[CefNativeAppl] ====================================================" << std::endl;
                         break;
                     }
                 }
@@ -261,6 +289,20 @@ namespace cef_ui {
             CefPostDelayedTask(TID_UI, 
                 base::BindOnce(&CefNativeAppl::ProcessPendingCommands, this), 
                 100);
+        }
+
+        void CefNativeAppl::SetBrowser(CefRefPtr<CefBrowser> browser) {
+            CEF_REQUIRE_UI_THREAD();
+            
+            // Phase 6.3: Store browser reference for command execution
+            if (!browser_) {
+                browser_ = browser;
+                std::cout << "[CefNativeAppl] Browser reference stored for command execution" << std::endl;
+            }
+        }
+
+        CefRefPtr<CefRenderProcessHandler> CefNativeAppl::GetRenderProcessHandler() {
+            return render_delegate_;
         }
 
         CefRefPtr<CefClient> CefNativeAppl::GetDefaultClient() {

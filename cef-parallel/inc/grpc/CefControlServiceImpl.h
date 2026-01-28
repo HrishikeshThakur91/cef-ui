@@ -22,7 +22,10 @@ class CefControlServiceImpl : public cefcontrol::CefControlService::Service {
   /// Constructor.
   /// @param session_token Expected session token for handshake validation
   /// @param server Pointer to GrpcServer (for shutdown flag checking)
-  CefControlServiceImpl(const std::string& session_token, GrpcServer* server);
+  /// @param java_callback_address Address of Java's status callback service (e.g., "localhost:50051")
+  CefControlServiceImpl(const std::string& session_token, 
+                        GrpcServer* server,
+                        const std::string& java_callback_address = "");
 
   ~CefControlServiceImpl() override = default;
 
@@ -54,10 +57,27 @@ class CefControlServiceImpl : public cefcontrol::CefControlService::Service {
                         const cefcontrol::ShutdownRequest* request,
                         cefcontrol::ShutdownResponse* response) override;
 
+  /// Phase 6.3: Send status notification to Java's callback service.
+  /// Non-blocking: Sends notification asynchronously.
+  /// @param command_id Command ID to correlate with
+  /// @param status Status string ("LOADING", "LOADED", "ERROR", "SHUTDOWN")
+  /// @param message Optional detail message
+  /// @param progress_percent Progress 0-100, or -1 if not applicable
+  void SendStatusNotification(const std::string& command_id,
+                              const std::string& status,
+                              const std::string& message = "",
+                              int progress_percent = -1);
+
  private:
   std::string expected_session_token_;
   GrpcServer* server_;  // Non-owning pointer for shutdown flag checking
   bool handshake_completed_ = false;  // Track if handshake succeeded
+
+  // Phase 6.3: gRPC client for calling Java's status callback service
+  std::shared_ptr<grpc::Channel> java_callback_channel_;
+  // Note: Stub will be created from generated proto once available
+  // std::unique_ptr<cefcontrol::CefStatusCallbackService::Stub> status_callback_stub_;
+  std::string java_callback_address_;  // Store address for lazy initialization
 };
 
 }  // namespace grpc_server

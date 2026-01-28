@@ -4,15 +4,32 @@
 #include "../../inc/grpc/CommandQueue.h"
 #include "include/cef_task.h"
 #include "include/base/cef_callback.h"
+#include "include/wrapper/cef_closure_task.h"
 #include <iostream>
 
 namespace cef_ui {
 namespace grpc_server {
 
 CefControlServiceImpl::CefControlServiceImpl(const std::string& session_token,
-                                             GrpcServer* server)
+                                             GrpcServer* server,
+                                             const std::string& java_callback_address)
     : expected_session_token_(session_token),
-      server_(server) {}
+      server_(server),
+      java_callback_address_(java_callback_address) {
+  
+  // Phase 6.3: Initialize gRPC channel to Java's callback service if address provided
+  if (!java_callback_address_.empty()) {
+    java_callback_channel_ = grpc::CreateChannel(
+        java_callback_address_,
+        grpc::InsecureChannelCredentials());
+    
+    std::cout << "[CefControlService] Initialized status callback channel to: " 
+              << java_callback_address_ << std::endl;
+    
+    // Note: Stub creation will be added once proto files are regenerated
+    // status_callback_stub_ = cefcontrol::CefStatusCallbackService::NewStub(java_callback_channel_);
+  }
+}
 
 grpc::Status CefControlServiceImpl::Handshake(
     grpc::ServerContext* context,
@@ -62,26 +79,32 @@ grpc::Status CefControlServiceImpl::OpenPage(
     const cefcontrol::OpenPageRequest* request,
     cefcontrol::OpenPageResponse* response) {
   
+  // Phase 6.3 Step 3: Enhanced validation logging
+  std::cout << "[CefControlService] ========== OpenPage Request Received ==========" << std::endl;
+  std::cout << "[CefControlService] command_id: " << request->command_id() << std::endl;
+  std::cout << "[CefControlService] page_url: " << request->page_url() << std::endl;
+  
   // Check if server is shutting down
   if (server_ && server_->IsShuttingDown()) {
+    std::cerr << "[CefControlService] REJECTED: Server is shutting down" << std::endl;
     response->set_command_id(request->command_id());
     response->set_accepted(false);
     response->set_message("Server is shutting down");
     return grpc::Status::OK;
   }
 
-  // Validate handshake was completed
+  // Validate handshake
   if (!handshake_completed_) {
-    std::cerr << "[CefControlService] OpenPage rejected: Handshake not completed" << std::endl;
+    std::cerr << "[CefControlService] REJECTED: Handshake not completed" << std::endl;
     response->set_command_id(request->command_id());
     response->set_accepted(false);
-    response->set_message("Handshake required");
+    response->set_message("Handshake not completed");
     return grpc::Status::OK;
   }
 
   // Validate required fields
   if (request->command_id().empty()) {
-    std::cerr << "[CefControlService] OpenPage rejected: Missing command_id" << std::endl;
+    std::cerr << "[CefControlService] REJECTED: Missing command_id" << std::endl;
     response->set_command_id("");
     response->set_accepted(false);
     response->set_message("Missing command_id");
@@ -89,41 +112,43 @@ grpc::Status CefControlServiceImpl::OpenPage(
   }
 
   if (request->page_url().empty()) {
-    std::cerr << "[CefControlService] OpenPage rejected: Missing page_url" << std::endl;
+    std::cerr << "[CefControlService] REJECTED: Missing page_url" << std::endl;
     response->set_command_id(request->command_id());
     response->set_accepted(false);
     response->set_message("Missing page_url");
     return grpc::Status::OK;
   }
 
-  // Phase 6.2 Step 5: Create command and enqueue directly
-  // Note: This is a simplified approach for Phase 6.2 where gRPC handlers
-  // can directly access the command queue on their thread. 
-  // In Phase 6.3+, we'll use CefPostTask to marshal to the UI thread.
-  
+  // Phase 6.2 Step 5: Create command and store for UI thread processing
+  std::cout << "[CefControlService] Creating UiCommand (command_id: " << request->command_id() << ")" << std::endl;
   OpenPageCommand cmd(request->command_id(), request->page_url());
   UiCommand ui_cmd(std::move(cmd));
   
   // Get command queue from server
   CommandQueue* queue = server_ ? server_->GetCommandQueue() : nullptr;
   if (!queue) {
-    std::cerr << "[CefControlService] Error: Command queue not available" << std::endl;
+    std::cerr << "[CefControlService] ERROR: Command queue not available" << std::endl;
     response->set_command_id(request->command_id());
     response->set_accepted(false);
     response->set_message("Internal error: command queue unavailable");
     return grpc::Status::OK;
   }
   
-  // Phase 6.2 MVP: Store command intent but defer CEF UI thread marshaling
-  // TODO(Phase 6.3): Add thread-safe command queue that uses CefPostTask for CEF thread safety
-  // For now, we document that this is gRPC thread context and commands are pending
-  std::cout << "[CefControlService] OpenPage: Command created (gRPC thread, not on CEF UI thread yet): " 
-            << request->page_url() << " (command_id: " << request->command_id() << ")" << std::endl;
+  std::cout << "[CefControlService] Posting command to UI thread (command_id: " << request->command_id() << ")" << std::endl;
   
+  // Post command to CEF UI thread using CefPostTask
+  // Fire-and-forget: we don't wait for execution
+  CefPostTask(TID_UI, base::BindOnce([](CommandQueue* q, UiCommand cmd) {
+      q->Enqueue(std::move(cmd));
+      }, queue, std::move(ui_cmd)));
+
+  std::cout << "[CefControlService] OpenPage ACCEPTED and queued (command_id: " << request->command_id() << ")" << std::endl;
+  std::cout << "[CefControlService] ====================================================" << std::endl;
+
   response->set_command_id(request->command_id());
   response->set_accepted(true);
-  response->set_message("Command accepted (queue to UI thread deferred)");
-  
+  response->set_message("Command accepted and queued for execution");
+
   return grpc::Status::OK;
 }
 
@@ -166,26 +191,92 @@ grpc::Status CefControlServiceImpl::Shutdown(
     const cefcontrol::ShutdownRequest* request,
     cefcontrol::ShutdownResponse* response) {
   
-  // Phase 6.2 Step 5: Create shutdown command intent
+  // Phase 6.3 Step 3: Enhanced validation logging
+  std::cout << "[CefControlService] ========== Shutdown Request Received ==========" << std::endl;
+  
+    // Phase 6.3: Create shutdown command and post to UI thread for execution
   ShutdownCommand cmd;
   UiCommand ui_cmd(std::move(cmd));
   
   // Get command queue from server
   CommandQueue* queue = server_ ? server_->GetCommandQueue() : nullptr;
   if (!queue) {
-    std::cerr << "[CefControlService] Error: Command queue not available" << std::endl;
+    std::cerr << "[CefControlService] ERROR: Command queue not available" << std::endl;
     response->set_acknowledged(false);
     response->set_message("Internal error: command queue unavailable");
     return grpc::Status::OK;
   }
   
-  // Phase 6.2 MVP: Store shutdown intent but don't immediately action it
-  std::cout << "[CefControlService] Shutdown request acknowledged (not posted to UI thread yet)" << std::endl;
+  std::cout << "[CefControlService] Posting shutdown command to UI thread" << std::endl;
   
+  // Post command to CEF UI thread using CefPostTask
+  CefPostTask(TID_UI, base::BindOnce([](CommandQueue* q, UiCommand cmd) {
+      q->Enqueue(std::move(cmd));
+      }, queue, std::move(ui_cmd)));
+
+  std::cout << "[CefControlService] Shutdown ACKNOWLEDGED and queued" << std::endl;
+  std::cout << "[CefControlService] ====================================================" << std::endl;
+
   response->set_acknowledged(true);
-  response->set_message("Shutdown acknowledged (deferred execution)");
+  response->set_message("Shutdown acknowledged and queued for execution");
   
   return grpc::Status::OK;
+}
+
+// Phase 6.3: Send status notification to Java's callback service
+void CefControlServiceImpl::SendStatusNotification(
+    const std::string& command_id,
+    const std::string& status,
+    const std::string& message,
+    int progress_percent) {
+  
+  // Check if callback channel is initialized
+  if (!java_callback_channel_) {
+    std::cerr << "[CefControlService] WARNING: Status callback channel not initialized, "
+              << "cannot send status notification" << std::endl;
+    return;
+  }
+
+  std::cout << "[CefControlService] Sending status notification: command_id=" << command_id
+            << ", status=" << status << ", message=" << message 
+            << ", progress=" << progress_percent << "%" << std::endl;
+
+  // TODO: Once proto files are regenerated with CefStatusCallbackService:
+  //
+  // 1. Create stub if not already created:
+  //    if (!status_callback_stub_) {
+  //      status_callback_stub_ = cefcontrol::CefStatusCallbackService::NewStub(java_callback_channel_);
+  //    }
+  //
+  // 2. Build PageStatusNotification:
+  //    cefcontrol::PageStatusNotification notification;
+  //    notification.set_command_id(command_id);
+  //    notification.set_status(status);
+  //    notification.set_message(message);
+  //    notification.set_progress_percent(progress_percent);
+  //    notification.set_timestamp_millis(
+  //        std::chrono::duration_cast<std::chrono::milliseconds>(
+  //            std::chrono::system_clock::now().time_since_epoch()).count());
+  //
+  // 3. Call Java's callback service:
+  //    cefcontrol::StatusAck ack;
+  //    grpc::ClientContext context;
+  //    
+  //    grpc::Status rpc_status = status_callback_stub_->NotifyPageStatus(
+  //        &context, notification, &ack);
+  //    
+  //    if (!rpc_status.ok()) {
+  //      std::cerr << "[CefControlService] Failed to send status notification: "
+  //                << rpc_status.error_message() << std::endl;
+  //    } else if (!ack.received()) {
+  //      std::cerr << "[CefControlService] Status notification rejected: "
+  //                << ack.error_message() << std::endl;
+  //    } else {
+  //      std::cout << "[CefControlService] Status notification acknowledged by Java" << std::endl;
+  //    }
+  
+  // For now, just log that we would send the notification
+  std::cout << "[CefControlService] Status notification prepared (waiting for proto regeneration)" << std::endl;
 }
 
 }  // namespace grpc_server
