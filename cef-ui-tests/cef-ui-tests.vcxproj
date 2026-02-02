@@ -132,6 +132,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="sampleSatrtup.java" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\cef-parallel\cef-parallel.vcxproj">

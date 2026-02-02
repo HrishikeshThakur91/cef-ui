@@ -8,8 +8,7 @@
 #include "include/cef_app.h"
 #include <memory>
 
-#include "../grpc/GrpcServer.h"
-#include "../grpc/CommandQueue.h"
+#include "../grpc/GrpcClient.h"
 
 
 namespace cef_ui {
@@ -35,13 +34,10 @@ namespace cef_ui {
             void SetBrowser(CefRefPtr<CefBrowser> browser);
 
         private:
-            // Process pending commands from gRPC (called on UI thread)
-            void ProcessPendingCommands();
+            // gRPC client for connecting to Java's server
+            std::unique_ptr<cef_ui::grpc_client::GrpcClient> grpc_client_;
 
-            // gRPC server for control plane communication
-            std::unique_ptr<cef_ui::grpc_server::GrpcServer> grpc_server_;
-
-            // Browser instance for command execution (Phase 6.3)
+            // Browser instance for command execution
             CefRefPtr<CefBrowser> browser_;
             
             // Render process handler (Phase 6.3 Step 2)

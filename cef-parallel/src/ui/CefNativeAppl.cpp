@@ -15,7 +15,7 @@
 #include "include/base/cef_callback.h"
 
 #include "../../cef-parallel/inc/ui/CefHandler.h"
-#include "../../cef-parallel/inc/grpc/UiCommand.h"  
+#include "../../cef-parallel/inc/grpc/GrpcClient.h"  
 #include "../../cef-parallel/inc/ui/CefNativeAppl.h"
 #include "../../cef-parallel/inc/renderer/CefRenderDelegate.h"
 
@@ -113,9 +113,9 @@ namespace cef_ui {
         }
 
         CefNativeAppl::~CefNativeAppl() {
-            // Stop gRPC server before CEF shutdown
-            if (grpc_server_) {
-                grpc_server_->Stop();
+            // Disconnect from gRPC server before CEF shutdown
+            if (grpc_client_) {
+                grpc_client_->Disconnect();
             }
         }
 
@@ -125,31 +125,31 @@ namespace cef_ui {
             CefRefPtr<CefCommandLine> command_line =
                 CefCommandLine::GetGlobalCommandLine();
 
-            // Phase 6.2: Start gRPC server
+            // Connect to Java's gRPC server as client
             std::string ipc_port_str = command_line->GetSwitchValue("ipcPort");
             std::string session_token = command_line->GetSwitchValue("sessionToken");
             
             if (!ipc_port_str.empty() && !session_token.empty()) {
                 try {
-                    uint16_t ipc_port = static_cast<uint16_t>(std::stoi(ipc_port_str));
-                    grpc_server_ = std::make_unique<cef_ui::grpc_server::GrpcServer>(session_token);
+                    // Build server address (Java's gRPC server)
+                    std::string server_address = "localhost:" + ipc_port_str;
                     
-                    if (!grpc_server_->Start(ipc_port)) {
-                        std::cerr << "[CefNativeAppl] Failed to start gRPC server" << std::endl;
-                        grpc_server_.reset();
+                    std::cout << "[CefNativeAppl] Creating gRPC client to connect to Java server" << std::endl;
+                    grpc_client_ = std::make_unique<cef_ui::grpc_client::GrpcClient>(
+                        server_address, session_token);
+                    
+                    // Connect and perform handshake
+                    if (!grpc_client_->ConnectAndHandshake()) {
+                        std::cerr << "[CefNativeAppl] Failed to connect to Java server" << std::endl;
+                        grpc_client_.reset();
+                    } else {
+                        std::cout << "[CefNativeAppl] Successfully connected to Java server" << std::endl;
                     }
                 } catch (const std::exception& e) {
-                    std::cerr << "[CefNativeAppl] Error starting gRPC server: " << e.what() << std::endl;
+                    std::cerr << "[CefNativeAppl] Error connecting to Java server: " << e.what() << std::endl;
                 }
             } else {
-                std::cerr << "[CefNativeAppl] Warning: --ipcPort or --sessionToken not provided, gRPC server not started" << std::endl;
-            }
-
-            // Phase 6.2 Step 5: Schedule periodic command processing
-            // Process commands every 100ms (fire-and-forget, no execution)
-            if (grpc_server_ && grpc_server_->IsRunning()) {
-                CefPostTask(TID_UI, 
-                    base::BindOnce(&CefNativeAppl::ProcessPendingCommands, this));
+                std::cerr << "[CefNativeAppl] Warning: --ipcPort or --sessionToken not provided" << std::endl;
             }
 
             static ui::CefUiBridgeImpl g_uiBridge;
@@ -229,67 +229,7 @@ namespace cef_ui {
             }
         }
 
-        void CefNativeAppl::ProcessPendingCommands() {
-            CEF_REQUIRE_UI_THREAD();
 
-            // Phase 6.3 Step 1: Dequeue and EXECUTE commands using native CEF APIs
-            if (!grpc_server_ || !grpc_server_->IsRunning()) {
-                return;  // Server stopped, no more processing
-            }
-
-            cef_ui::grpc_server::CommandQueue* queue = grpc_server_->GetCommandQueue();
-            if (!queue) {
-                return;
-            }
-
-            // Process all pending commands
-            while (auto cmd_opt = queue->Dequeue()) {
-                const auto& cmd = cmd_opt.value();
-                
-                switch (cmd.GetType()) {
-                    case cef_ui::grpc_server::CommandType::OPEN_PAGE: {
-                        if (const auto* open_page = cmd.AsOpenPage()) {
-                            std::cout << "[CefNativeAppl] ========== Executing OPEN_PAGE Command ==========" << std::endl;
-                            std::cout << "[CefNativeAppl] command_id: " << open_page->command_id << std::endl;
-                            std::cout << "[CefNativeAppl] url: " << open_page->url << std::endl;
-                            
-                            // Execute: Navigate browser to URL using native CEF API
-                            if (browser_ && browser_->GetMainFrame()) {
-                                browser_->GetMainFrame()->LoadURL(open_page->url);
-                                std::cout << "[CefNativeAppl] Browser navigation INITIATED: " << open_page->url << std::endl;
-                                std::cout << "[CefNativeAppl] (Load completion will be logged in OnLoadEnd)" << std::endl;
-                            } else {
-                                std::cerr << "[CefNativeAppl] FAILED: Browser not available" << std::endl;
-                            }
-                            std::cout << "[CefNativeAppl] ====================================================" << std::endl;
-                        }
-                        break;
-                    }
-                    case cef_ui::grpc_server::CommandType::SHUTDOWN: {
-                        std::cout << "[CefNativeAppl] ========== Executing SHUTDOWN Command ==========" << std::endl;
-                        
-                        // Execute: Close browser cleanly
-                        if (browser_) {
-                            browser_->GetHost()->CloseBrowser(false);  // false = allow close handlers to run
-                            std::cout << "[CefNativeAppl] Browser close INITIATED" << std::endl;
-                            std::cout << "[CefNativeAppl] (Shutdown will complete in OnBeforeClose)" << std::endl;
-                            // Note: CefQuitMessageLoop will be called in OnBeforeClose handler
-                        } else {
-                            std::cerr << "[CefNativeAppl] FAILED: Browser not available, quitting directly" << std::endl;
-                            // If no browser, quit directly
-                            CefQuitMessageLoop();
-                        }
-                        std::cout << "[CefNativeAppl] ====================================================" << std::endl;
-                        break;
-                    }
-                }
-            }
-
-            // Schedule next processing cycle (100ms delay)
-            CefPostDelayedTask(TID_UI, 
-                base::BindOnce(&CefNativeAppl::ProcessPendingCommands, this), 
-                100);
-        }
 
         void CefNativeAppl::SetBrowser(CefRefPtr<CefBrowser> browser) {
             CEF_REQUIRE_UI_THREAD();
