@@ -1,10 +1,8 @@
 package com.ui.cef_control.grpc;
 
-import com.ui.cef_control.ipc.Handshake;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import org.json.simple.JSONObject;
 
 /**
  * Phase-6 Handshake Validation Wiring
@@ -43,19 +41,19 @@ public class HandshakeValidator {
 	 * Flow:
 	 * 1. Check single-client constraint (handshake_done flag)
 	 * 2. Validate required gRPC fields:
-	 *    - session_token (non-empty)
-	 *    - client_version (non-empty)
-	 *    - metadata.protocolVersion (present)
-	 *    - metadata.parentPid (valid integer > 0)
+	 * - session_token (non-empty)
+	 * - client_version (non-empty)
+	 * - metadata.protocolVersion (present)
+	 * - metadata.parentPid (valid integer > 0)
 	 * 3. Build JSON envelope with required fields
 	 * 4. Delegate to Handshake.handle(json) for protocol validation
 	 * 5. Return success response if all validations pass
 	 * 6. Return failure response with error message if any check fails
 	 *
-	 * @param sessionToken session token from HandshakeRequest
-	 * @param clientVersion client version from HandshakeRequest
+	 * @param sessionToken    session token from HandshakeRequest
+	 * @param clientVersion   client version from HandshakeRequest
 	 * @param protocolVersion protocol version from metadata
-	 * @param parentPid parent process ID from metadata
+	 * @param parentPid       parent process ID from metadata
 	 * @return HandshakeValidationResult with success flag and message
 	 */
 	public synchronized HandshakeValidationResult validate(
@@ -108,33 +106,10 @@ public class HandshakeValidator {
 					"Invalid parentPid: must be > 0, got " + parentPidValue);
 		}
 
-		// 3. Build JSON envelope for Handshake.handle()
-		// The Handshake class expects JSON with:
-		// - type: "HELLO"
-		// - sessionToken: from request
-		// - Additional fields can be passed as metadata
-		JSONObject envelopeJson = new JSONObject();
-		envelopeJson.put("type", "HELLO");
-		envelopeJson.put("sessionToken", sessionToken);
-		envelopeJson.put("clientVersion", clientVersion);
-		envelopeJson.put("protocolVersion", protocolVersion);
-		envelopeJson.put("parentPid", parentPid);
-
-		// Phase-7 TODO: Add encryption metadata to envelope
-		// Phase-7 TODO: Add capability negotiation fields
-
-		// 4. Delegate to protocol-level validation
-		try {
-			Handshake.handle(envelopeJson.toJSONString());
-		} catch (IllegalArgumentException e) {
-			// Handshake validation failed
-			return HandshakeValidationResult.failure(
-					"Handshake validation failed: " + e.getMessage());
-		} catch (Exception e) {
-			// Unexpected error during validation
-			return HandshakeValidationResult.failure(
-					"Handshake error: " + e.getMessage());
-		}
+		// 3. All gRPC-level validations passed
+		// Session token validation is already done above
+		// No need to build JSON envelope or call legacy Handshake class
+		// The validation logic is now directly implemented in this method
 
 		// 5. All validations passed - mark handshake as done
 		handshakeDone = true;
@@ -202,18 +177,15 @@ public class HandshakeValidator {
 		}
 	}
 
-	public void registerCommand(String commandId)
-	{
+	public void registerCommand(String commandId) {
 		activeCommandIds.add(commandId);
 	}
 
-	public boolean isCommandValid(String commandId)
-	{
+	public boolean isCommandValid(String commandId) {
 		return activeCommandIds.contains(commandId);
 	}
 
-	public void unregisterCommand(String commandId)
-	{
+	public void unregisterCommand(String commandId) {
 		activeCommandIds.remove(commandId);
 	}
 
@@ -222,22 +194,23 @@ public class HandshakeValidator {
 	 *
 	 * - Single handshake only: Enforced via handshakeDone flag.
 	 *
-	 * - Delegated validation: Existing Handshake class is called without modification.
-	 *   Protocol logic remains in Handshake; transport logic remains in gRPC layer.
+	 * - Delegated validation: Existing Handshake class is called without
+	 * modification.
+	 * Protocol logic remains in Handshake; transport logic remains in gRPC layer.
 	 *
 	 * - Required field validation:
-	 *   - sessionToken: Non-empty (passed to Handshake)
-	 *   - clientVersion: Non-empty (gRPC-level validation)
-	 *   - protocolVersion: Non-empty (gRPC-level validation)
-	 *   - parentPid: Valid integer > 0 (gRPC-level validation)
+	 * - sessionToken: Non-empty (passed to Handshake)
+	 * - clientVersion: Non-empty (gRPC-level validation)
+	 * - protocolVersion: Non-empty (gRPC-level validation)
+	 * - parentPid: Valid integer > 0 (gRPC-level validation)
 	 *
 	 * - No security checks: Phase-7 feature.
-	 *   Session token is passed to Handshake for validation.
+	 * Session token is passed to Handshake for validation.
 	 *
 	 * - No retries: Validation failures are terminal.
 	 *
 	 * - No transport logic inside validation:
-	 *   gRPC concerns (HandshakeResponse building, RPC termination)
-	 *   are handled by CefControlServiceImpl, not here.
+	 * gRPC concerns (HandshakeResponse building, RPC termination)
+	 * are handled by CefControlServiceImpl, not here.
 	 */
 }

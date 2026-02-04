@@ -10,7 +10,7 @@ namespace core {
 /// Immutable application configuration parsed from command-line arguments.
 /// 
 /// Parses and validates required configuration parameters:
-/// - --ipcPort: WebSocket server port (1-65535)
+/// - --ipcPort: gRPC server port (1-65535)
 /// - --sessionToken: Session authentication token
 /// - --startUrl: Initial URL to load (HTTPS only)
 /// - --windowId: Native window identifier
@@ -33,7 +33,7 @@ class AppConfig {
 
   ~AppConfig() = default;
 
-  /// Get the IPC port number.
+  /// Get the gRPC port number (legacy parameter name: ipcPort).
   /// @return Port number in range [1, 65535]
   uint16_t GetIpcPort() const;
 

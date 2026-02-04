@@ -1,6 +1,5 @@
 package com.ui.cef_control.grpc;
 
-import com.ui.cef_control.ipc.IMessageChannel;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
@@ -13,15 +12,14 @@ import com.ui.cef_control.grpc.gen.PageStatusResponse;
 import com.ui.cef_control.grpc.gen.OpenPageResponse;
 import com.ui.cef_control.grpc.gen.PageStatusRequest;
 
-
 /**
  * Phase-6 gRPC Message Channel Implementation
  *
- * Implements IMessageChannel to send commands to CEF via gRPC.
- * Converts IpcMessage objects to gRPC requests and dispatches them.
+ * Sends commands to CEF via gRPC.
+ * Converts JSON messages to gRPC requests and dispatches them.
  *
  * Responsibilities:
- * - Convert IpcMessage ? OpenPageRequest proto
+ * - Convert JSON message ? OpenPageRequest proto
  * - Send OpenPageRequest via CefControlService.openPage() RPC
  * - Handle RPC responses
  * - Map message type to appropriate gRPC RPC
@@ -39,7 +37,7 @@ import com.ui.cef_control.grpc.gen.PageStatusRequest;
  * Phase-7 TODO: Add timeout and deadline handling.
  * Phase-7 TODO: Add error recovery and structured exception mapping.
  */
-public class GrpcMessageChannel implements IMessageChannel {
+public class GrpcMessageChannel {
 
 	/**
 	 * Message type constant for OPEN_PAGE commands.
@@ -70,8 +68,8 @@ public class GrpcMessageChannel implements IMessageChannel {
 	 * Creates a new GrpcMessageChannel instance.
 	 *
 	 * @param channel the gRPC ManagedChannel for communicating with CEF.
-	 *               Must be open and initialized.
-	 *               Ownership remains with the caller.
+	 *                Must be open and initialized.
+	 *                Ownership remains with the caller.
 	 * @throws NullPointerException if channel is null
 	 */
 	public GrpcMessageChannel(ManagedChannel channel) {
@@ -93,11 +91,11 @@ public class GrpcMessageChannel implements IMessageChannel {
 	 * Thread-safe: Can be called from any thread.
 	 *
 	 * @param messageJson JSON string representation of the message.
-	 *                   Must contain "commandId", "type", and "payload" fields.
-	 * @throws IllegalArgumentException if messageJson is invalid or message type is unsupported
-	 * @throws StatusRuntimeException if the gRPC RPC fails
+	 *                    Must contain "commandId", "type", and "payload" fields.
+	 * @throws IllegalArgumentException if messageJson is invalid or message type is
+	 *                                  unsupported
+	 * @throws StatusRuntimeException   if the gRPC RPC fails
 	 */
-	@Override
 	public void send(String messageJson) {
 		if (messageJson == null || messageJson.trim().isEmpty()) {
 			throw new IllegalArgumentException("Message cannot be null or empty");
@@ -141,7 +139,7 @@ public class GrpcMessageChannel implements IMessageChannel {
 	 *
 	 * @param commandId unique identifier for this command
 	 * @param payload   JSON object containing page_url and optional page_title
-	 * @throws StatusRuntimeException if the RPC fails
+	 * @throws StatusRuntimeException   if the RPC fails
 	 * @throws IllegalArgumentException if payload is invalid
 	 */
 	private void sendOpenPage(String commandId, JSONObject payload) {
@@ -232,7 +230,6 @@ public class GrpcMessageChannel implements IMessageChannel {
 	 *
 	 * Phase-7 TODO: Add resource cleanup hooks.
 	 */
-	@Override
 	public void close() {
 		// Phase-6 MVP: No-op. Channel is managed externally.
 		// Phase-7 TODO: Add cleanup logic if needed.
@@ -245,7 +242,7 @@ public class GrpcMessageChannel implements IMessageChannel {
 	 * Phase-6 MVP: Simple string parsing (not robust).
 	 * Phase-7 TODO: Replace with proper JSONParser from json-simple.
 	 *
-	 * @param json the JSON string
+	 * @param json      the JSON string
 	 * @param fieldName the field name to extract
 	 * @return the field value, or null if not found
 	 */
@@ -308,10 +305,8 @@ public class GrpcMessageChannel implements IMessageChannel {
 	}
 
 	public PageStatusResponse queryPageStatusSync(String commandId, long timeoutMillis)
-			throws IOException, TimeoutException
-	{
-		try
-		{
+			throws IOException, TimeoutException {
+		try {
 			PageStatusRequest request = PageStatusRequest.newBuilder()
 					.setCommandId(commandId)
 					.build();
@@ -319,9 +314,7 @@ public class GrpcMessageChannel implements IMessageChannel {
 			// Phase-7 TODO: Add deadline (timeoutMillis) via context
 			PageStatusResponse response = stub.pageStatus(request);
 			return response;
-		}
-		catch (StatusRuntimeException e)
-		{
+		} catch (StatusRuntimeException e) {
 			handlePageStatusError(e, commandId);
 			throw new IOException("PageStatus RPC failed: " + e.getStatus(), e);
 		}
@@ -331,27 +324,27 @@ public class GrpcMessageChannel implements IMessageChannel {
 	 * Phase-6 MVP Constraints:
 	 *
 	 * - OPEN_PAGE only: No other message types supported.
-	 *   Phase-7 will add support for PAGE_QUERY, PAGE_CLOSE, etc.
+	 * Phase-7 will add support for PAGE_QUERY, PAGE_CLOSE, etc.
 	 *
 	 * - No JSON parsing library: Phase-6 uses simple string extraction.
-	 *   Phase-7 will integrate org.json.simple.JSONParser.
+	 * Phase-7 will integrate org.json.simple.JSONParser.
 	 *
 	 * - No retry logic: Failed RPCs throw StatusRuntimeException immediately.
-	 *   Phase-7 will add exponential backoff and retry policies.
+	 * Phase-7 will add exponential backoff and retry policies.
 	 *
 	 * - No caching: Each send() is independent.
-	 *   Phase-7 may add message queuing if needed.
+	 * Phase-7 may add message queuing if needed.
 	 *
 	 * - No metadata conversion: Metadata fields are ignored.
-	 *   Phase-7 will extract and convert encryption/signing metadata.
+	 * Phase-7 will extract and convert encryption/signing metadata.
 	 *
 	 * - No timeout handling: All RPCs use gRPC default timeouts.
-	 *   Phase-7 will add deadline extraction from message metadata.
+	 * Phase-7 will add deadline extraction from message metadata.
 	 *
 	 * - Channel not owned: The underlying ManagedChannel is managed externally.
-	 *   Close() is a no-op for Phase-6.
+	 * Close() is a no-op for Phase-6.
 	 *
 	 * - Thread-safe: All RPC invocations are independent and can be called
-	 *   from different threads concurrently.
+	 * from different threads concurrently.
 	 */
 }

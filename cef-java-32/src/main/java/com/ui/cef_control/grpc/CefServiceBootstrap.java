@@ -1,7 +1,6 @@
 package com.ui.cef_control.grpc;
 
-import com.ui.cef_control.ipc.ConnectionListener;
-import com.ui.cef_control.ipc.IMessageChannel;
+import com.ui.cef_control.grpc.ConnectionListener;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import java.io.IOException;
@@ -20,7 +19,8 @@ import org.json.simple.JSONObject;
  * 5. Wait briefly for PageStatus response
  * 6. Shutdown server cleanly
  *
- * This is a synchronous, single-threaded MVP with no async or reactive patterns.
+ * This is a synchronous, single-threaded MVP with no async or reactive
+ * patterns.
  * No lifecycle supervision, no retry logic, no logging framework.
  *
  * Phase-7 TODO: Move to proper application bootstrap/main.
@@ -28,8 +28,7 @@ import org.json.simple.JSONObject;
  * Phase-7 TODO: Add graceful shutdown hooks (SIGTERM, etc.).
  * Phase-7 TODO: Add metrics and structured logging.
  */
-public class CefServiceBootstrap
-{
+public class CefServiceBootstrap {
 
 	private final int ipcPort;
 	private final String sessionToken;
@@ -62,7 +61,7 @@ public class CefServiceBootstrap
 	 * 4. Waits for PageStatus response
 	 * 5. Shuts down server
 	 *
-	 * @throws IOException if server cannot start
+	 * @throws IOException          if server cannot start
 	 * @throws InterruptedException if waiting is interrupted
 	 */
 	public void run() throws IOException, InterruptedException {
@@ -181,7 +180,7 @@ public class CefServiceBootstrap
 		System.out.println("[Bootstrap] Creating message channel and sending OPEN_PAGE command");
 
 		// Create message channel for sending commands
-		IMessageChannel messageChannel = new GrpcMessageChannel(channel);
+		GrpcMessageChannel messageChannel = new GrpcMessageChannel(channel);
 
 		// Build OPEN_PAGE message
 		JSONObject payload = new JSONObject();
@@ -218,7 +217,7 @@ public class CefServiceBootstrap
 		System.out.println("[Bootstrap] Querying page status from CEF");
 
 		// Create message channel for sending commands
-		IMessageChannel messageChannel = new GrpcMessageChannel(channel);
+		GrpcMessageChannel messageChannel = new GrpcMessageChannel(channel);
 
 		// Build PAGE_STATUS query message
 		JSONObject message = new JSONObject();
@@ -298,12 +297,12 @@ public class CefServiceBootstrap
 	 * Main entry point for Phase-6 MVP testing.
 	 *
 	 * Usage:
-	 *   java CefServiceBootstrap 50051 "test-token-123" "http://localhost:8080/docs"
+	 * java CefServiceBootstrap 50051 "test-token-123" "http://localhost:8080/docs"
 	 *
 	 * Args:
-	 *   [0] ipcPort     - gRPC server port (e.g., 50051)
-	 *   [1] sessionToken - session token for handshake (e.g., "test-token-123")
-	 *   [2] startUrl     - URL to open in CEF (e.g., "http://localhost:8080/docs")
+	 * [0] ipcPort - gRPC server port (e.g., 50051)
+	 * [1] sessionToken - session token for handshake (e.g., "test-token-123")
+	 * [2] startUrl - URL to open in CEF (e.g., "http://localhost:8080/docs")
 	 *
 	 * @param args command-line arguments
 	 */
@@ -339,24 +338,24 @@ public class CefServiceBootstrap
 	 * Phase-6 MVP Constraints:
 	 *
 	 * - Single-threaded: All operations synchronous, no thread pools.
-	 *   Phase-7 will add async/reactive patterns.
+	 * Phase-7 will add async/reactive patterns.
 	 *
 	 * - No lifecycle supervision: No process management or restart logic.
-	 *   Phase-7 will integrate with UIProcess and UISupervisor.
+	 * Phase-7 will integrate with UIProcess and UISupervisor.
 	 *
 	 * - No retries: All operations are one-shot.
-	 *   Failures terminate the flow.
+	 * Failures terminate the flow.
 	 *
 	 * - No logging framework: Uses System.out/System.err only.
-	 *   Phase-7 will add SLF4J or similar.
+	 * Phase-7 will add SLF4J or similar.
 	 *
 	 * - Blocking waits: Simple sleep() and wait() calls.
-	 *   Phase-7 will use CountDownLatch, CompletableFuture, etc.
+	 * Phase-7 will use CountDownLatch, CompletableFuture, etc.
 	 *
 	 * - Hardcoded timeouts: 10 seconds for handshake, 5 seconds for page status.
-	 *   Phase-7 will configure via AppConfig.
+	 * Phase-7 will configure via AppConfig.
 	 *
 	 * - Command-line driven: Takes args for port, token, URL.
-	 *   Phase-7 will integrate with AppConfig parsing.
+	 * Phase-7 will integrate with AppConfig parsing.
 	 */
 }

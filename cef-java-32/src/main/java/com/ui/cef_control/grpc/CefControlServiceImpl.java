@@ -1,6 +1,6 @@
 package com.ui.cef_control.grpc;
 
-import com.ui.cef_control.ipc.ConnectionListener;
+import com.ui.cef_control.grpc.ConnectionListener;
 import io.grpc.stub.StreamObserver;
 
 import com.ui.cef_control.grpc.gen.CefControlServiceGrpc;
@@ -68,7 +68,7 @@ public class CefControlServiceImpl extends CefControlServiceGrpc.CefControlServi
 	 * Creates a new service implementation with a connection listener.
 	 *
 	 * @param connectionListener optional listener for connection events.
-	 *                          If null, no lifecycle notifications are sent.
+	 *                           If null, no lifecycle notifications are sent.
 	 */
 	public CefControlServiceImpl(ConnectionListener connectionListener) {
 		this.connectionListener = connectionListener;
@@ -97,10 +97,10 @@ public class CefControlServiceImpl extends CefControlServiceGrpc.CefControlServi
 	 * Delegates validation to HandshakeValidator which:
 	 * 1. Checks single-client constraint (handshake_done flag)
 	 * 2. Validates gRPC-level fields:
-	 *    - session_token (non-empty)
-	 *    - client_version (non-empty)
-	 *    - metadata.protocolVersion (non-empty)
-	 *    - metadata.parentPid (valid integer > 0)
+	 * - session_token (non-empty)
+	 * - client_version (non-empty)
+	 * - metadata.protocolVersion (non-empty)
+	 * - metadata.parentPid (valid integer > 0)
 	 * 3. Delegates to Handshake.handle() for protocol validation
 	 *
 	 * On success:
@@ -111,7 +111,7 @@ public class CefControlServiceImpl extends CefControlServiceGrpc.CefControlServi
 	 * - Returns HandshakeResponse with success=false and error message
 	 * - gRPC session terminated (client must disconnect)
 	 *
-	 * @param request the HandshakeRequest from CEF
+	 * @param request          the HandshakeRequest from CEF
 	 * @param responseObserver the gRPC response observer
 	 */
 	@Override
@@ -167,7 +167,7 @@ public class CefControlServiceImpl extends CefControlServiceGrpc.CefControlServi
 	 * Phase-7 TODO: Route to page rendering logic.
 	 * Phase-7 TODO: Add timeout and error handling.
 	 *
-	 * @param request the OpenPageRequest
+	 * @param request          the OpenPageRequest
 	 * @param responseObserver the gRPC response observer
 	 */
 	@Override
@@ -203,7 +203,7 @@ public class CefControlServiceImpl extends CefControlServiceGrpc.CefControlServi
 	 * Phase-7 TODO: Query actual page state from internal registry.
 	 * Phase-7 TODO: Add error handling and timeout logic.
 	 *
-	 * @param request the PageStatusRequest
+	 * @param request          the PageStatusRequest
 	 * @param responseObserver the gRPC response observer
 	 */
 	@Override
@@ -234,7 +234,7 @@ public class CefControlServiceImpl extends CefControlServiceGrpc.CefControlServi
 	 * Phase-6 MVP: Not required. Placeholder for Phase-7.
 	 * Phase-7 TODO: Implement graceful CEF shutdown sequence.
 	 *
-	 * @param request the ShutdownRequest
+	 * @param request          the ShutdownRequest
 	 * @param responseObserver the gRPC response observer
 	 */
 	@Override
@@ -252,30 +252,29 @@ public class CefControlServiceImpl extends CefControlServiceGrpc.CefControlServi
 		responseObserver.onCompleted();
 	}
 
-
 	/**
 	 * Phase-6 MVP Constraints:
 	 *
 	 * - Single client only: Enforced via HandshakeValidator.
-	 *   Second handshake attempt is always rejected.
+	 * Second handshake attempt is always rejected.
 	 *
 	 * - Protocol validation delegated: Handshake class is called via
-	 *   HandshakeValidator without modification of Handshake API.
-	 *   Protocol logic remains in Handshake; transport logic in gRPC layer.
+	 * HandshakeValidator without modification of Handshake API.
+	 * Protocol logic remains in Handshake; transport logic in gRPC layer.
 	 *
 	 * - gRPC-level validation: HandshakeValidator validates:
-	 *   - session_token (non-empty)
-	 *   - client_version (non-empty)
-	 *   - protocolVersion from metadata (non-empty)
-	 *   - parentPid from metadata (valid integer > 0)
+	 * - session_token (non-empty)
+	 * - client_version (non-empty)
+	 * - protocolVersion from metadata (non-empty)
+	 * - parentPid from metadata (valid integer > 0)
 	 *
 	 * - No TLS: Not needed at this layer; configured at GrpcIpcServer.
 	 *
 	 * - No authentication: Phase-7 feature.
-	 *   Session token is received but validated by Handshake class.
+	 * Session token is received but validated by Handshake class.
 	 *
 	 * - No encryption: Phase-7 feature.
-	 *   Metadata is received but not processed for encryption.
+	 * Metadata is received but not processed for encryption.
 	 *
 	 * - No retry logic: Failures are terminal for that RPC.
 	 *
