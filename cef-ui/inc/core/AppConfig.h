@@ -49,17 +49,29 @@ class AppConfig {
   /// @return Window identifier as unsigned 32-bit integer
   uint32_t GetWindowId() const;
 
+  /// Get the control file path (optional).
+  /// @return Control file path, empty if not specified
+  const std::string& GetControlFile() const;
+
+  /// Get the control key (optional).
+  /// @return Base64-encoded control key, empty if not specified
+  const std::string& GetControlKey() const;
+
  private:
   // Private constructor - only FromArgs can create instances
   AppConfig(uint16_t ipc_port,
             const std::string& session_token,
             const std::string& start_url,
-            uint32_t window_id);
+            uint32_t window_id,
+            const std::string& control_file,
+            const std::string& control_key);
 
   uint16_t ipc_port_;
   std::string session_token_;
   std::string start_url_;
   uint32_t window_id_;
+  std::string control_file_;  // Optional
+  std::string control_key_;   // Optional
 };
 
 }  // namespace core

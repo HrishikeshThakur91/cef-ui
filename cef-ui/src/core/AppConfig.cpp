@@ -11,11 +11,15 @@ namespace core {
 AppConfig::AppConfig(uint16_t ipc_port,
                      const std::string& session_token,
                      const std::string& start_url,
-                     uint32_t window_id)
+                     uint32_t window_id,
+                     const std::string& control_file,
+                     const std::string& control_key)
     : ipc_port_(ipc_port),
       session_token_(session_token),
       start_url_(start_url),
-      window_id_(window_id) {}
+      window_id_(window_id),
+      control_file_(control_file),
+      control_key_(control_key) {}
 
 AppConfig AppConfig::FromArgs(const std::vector<std::string>& args) {
   if (args.empty()) {
@@ -26,11 +30,14 @@ AppConfig AppConfig::FromArgs(const std::vector<std::string>& args) {
   std::string session_token;
   std::string start_url;
   uint32_t window_id = 0;
+  std::string control_file;  // Optional
+  std::string control_key;   // Optional
 
   bool has_ipc_port = false;
   bool has_session_token = false;
   bool has_start_url = false;
   bool has_window_id = false;
+  // controlFile and controlKey are optional, no flags needed
 
   // PHASE 1: Parse all arguments WITHOUT validation (collect values only)
   for (size_t i = 0; i < args.size(); ++i) {
@@ -78,6 +85,18 @@ AppConfig AppConfig::FromArgs(const std::vector<std::string>& args) {
       } catch (const std::out_of_range&) {
         throw InvalidConfigException("ConfigError:  --windowId value is out of range");
       }
+    } else if (arg == "--controlFile") {
+      if (i + 1 >= args.size()) {
+        throw InvalidConfigException("ConfigError:  --controlFile requires a value");
+      }
+      control_file = args[i + 1];
+      ++i;  // Skip the value
+    } else if (arg == "--controlKey") {
+      if (i + 1 >= args.size()) {
+        throw InvalidConfigException("ConfigError:  --controlKey requires a value");
+      }
+      control_key = args[i + 1];
+      ++i;  // Skip the value
     } else {
       throw InvalidConfigException(
           "ConfigError: Unknown argument '" + arg + "'"
@@ -118,7 +137,8 @@ AppConfig AppConfig::FromArgs(const std::vector<std::string>& args) {
     );
   }
 
-  return AppConfig(ipc_port, session_token, start_url, window_id);
+  return AppConfig(ipc_port, session_token, start_url, window_id,
+                   control_file, control_key);
 }
 
 uint16_t AppConfig::GetIpcPort() const {
@@ -135,6 +155,14 @@ const std::string& AppConfig::GetStartUrl() const {
 
 uint32_t AppConfig::GetWindowId() const {
   return window_id_;
+}
+
+const std::string& AppConfig::GetControlFile() const {
+  return control_file_;
+}
+
+const std::string& AppConfig::GetControlKey() const {
+  return control_key_;
 }
 
 }  // namespace core

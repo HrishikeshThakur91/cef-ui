@@ -58,6 +58,10 @@ class CefBrowserManager {
   /// Browser will close asynchronously.
   void Close() noexcept;
 
+  /// Get the browser instance for command dispatching.
+  /// @return Reference to browser instance
+  BrowserInstance& GetBrowserInstance() { return *browser_; }
+
  private:
   NativeWindow& window_;
   std::string url_;

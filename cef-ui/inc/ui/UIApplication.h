@@ -8,12 +8,24 @@ namespace cef_ui {
         class NativeWindow;
         class CefBrowserManager;
         class ShutdownCoordinator;
+    }
+
+    namespace core {
+        class AppConfig;
+
+        // Forward declarations for control channel
+        namespace core {
+            class ControlCommandDispatcher;
+        }
+        namespace ipc {
+            class FileEncryptedCommandReceiver;
+        }
 
         /// Application-level root (Phase 5+)
         /// Owns UI objects, NOT CEF kernel lifecycle.
         class UIApplication {
         public:
-            UIApplication();
+            UIApplication(const core::AppConfig& config);
             ~UIApplication();
 
             // Non-copyable / non-movable
@@ -27,9 +39,14 @@ namespace cef_ui {
             void Start();
 
         private:
+            const core::AppConfig& config_;
             std::unique_ptr<NativeWindow> window_;
             std::unique_ptr<CefBrowserManager> browser_;
             std::unique_ptr<ShutdownCoordinator> shutdown_;
+
+            // TODO: Replace FileEncryptedCommandReceiver with gRPC receiver in Phase 6
+            std::unique_ptr<core::ControlCommandDispatcher> command_dispatcher_;
+            std::unique_ptr<ipc::FileEncryptedCommandReceiver> file_receiver_;
         };
 
     } // namespace ui

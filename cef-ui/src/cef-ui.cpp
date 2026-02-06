@@ -4,6 +4,7 @@
 #include "include/cef_browser_process_handler.h"
 
 #include "../inc/ui/UIApplication.h"
+#include "../inc/core/AppConfig.h"
 
 using cef_ui::ui::UIApplication;
 
@@ -31,7 +32,17 @@ int APIENTRY wWinMain(HINSTANCE hInstance,
 
     {
         // Your architecture starts here
-        UIApplication app;
+        // Create config with required args (control channel optional)
+        std::vector<std::string> args = {
+            "--ipcPort", "8080",
+            "--sessionToken", "dummy-token",
+            "--startUrl", "https://www.google.com/",
+            "--windowId", "0"
+            // --controlFile and --controlKey are optional, not provided
+        };
+        cef_ui::core::AppConfig config = cef_ui::core::AppConfig::FromArgs(args);
+        
+        UIApplication app(config);
         app.Start();
 
         CefRunMessageLoop();
