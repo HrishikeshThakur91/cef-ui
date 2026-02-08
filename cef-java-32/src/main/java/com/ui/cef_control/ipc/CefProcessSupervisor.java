@@ -1,5 +1,6 @@
 package com.ui.cef_control.ipc;
 
+import com.ui.cef_control.util.Logger;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ import java.util.List;
  * - No UI logic
  * - No threads beyond Process API and monitor thread
  * - No retries beyond basic restart
- * - Uses System.out/err for logging
+ * - Uses Logger for logging
  * - Deterministic behavior
  */
 public final class CefProcessSupervisor {
@@ -89,7 +90,7 @@ public final class CefProcessSupervisor {
         this.exitCode = null;
         this.monitorThread = null;
 
-        System.out.println("[CefProcessSupervisor] Initialized with executable: " + cefExecutablePath);
+        Logger.info("CefProcessSupervisor", "Initialized with executable: " + cefExecutablePath);
     }
 
     /**
@@ -106,7 +107,7 @@ public final class CefProcessSupervisor {
             throw new IllegalStateException("CEF process is already running");
         }
 
-        System.out.println("[CefProcessSupervisor] Starting CEF process...");
+        Logger.info("CefProcessSupervisor", "Starting CEF process...");
 
         // Build command line
         List<String> command = new ArrayList<>();
@@ -118,7 +119,7 @@ public final class CefProcessSupervisor {
         command.add("--controlKey");
         command.add(controlKey);
 
-        System.out.println("[CefProcessSupervisor] Command: " + String.join(" ", command));
+        Logger.info("CefProcessSupervisor", "Command: " + String.join(" ", command));
 
         // Launch process
         ProcessBuilder processBuilder = new ProcessBuilder(command);
@@ -132,11 +133,11 @@ public final class CefProcessSupervisor {
             // Start monitoring thread
             startMonitorThread();
 
-            System.out.println("[CefProcessSupervisor] CEF process started successfully");
+            Logger.info("CefProcessSupervisor", "CEF process started successfully");
 
         } catch (IOException e) {
             String errorMsg = "Failed to start CEF process: " + e.getMessage();
-            System.err.println("[CefProcessSupervisor] " + errorMsg);
+            Logger.error("CefProcessSupervisor", errorMsg);
             cefProcess = null;
             status = ProcessStatus.NOT_STARTED;
             throw new IOException(errorMsg, e);
@@ -151,11 +152,11 @@ public final class CefProcessSupervisor {
      */
     public synchronized void stop() {
         if (!isAlive()) {
-            System.out.println("[CefProcessSupervisor] Process is not running, nothing to stop");
+            Logger.info("CefProcessSupervisor", "Process is not running, nothing to stop");
             return;
         }
 
-        System.out.println("[CefProcessSupervisor] Stopping CEF process...");
+        Logger.info("CefProcessSupervisor", "Stopping CEF process...");
 
         // Request graceful shutdown
         cefProcess.destroy();
@@ -164,7 +165,7 @@ public final class CefProcessSupervisor {
         try {
             boolean terminated = cefProcess.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
             if (!terminated) {
-                System.err.println("[CefProcessSupervisor] Process did not terminate gracefully, forcing...");
+                Logger.warn("CefProcessSupervisor", "Process did not terminate gracefully, forcing...");
                 cefProcess.destroyForcibly();
                 cefProcess.waitFor(2, java.util.concurrent.TimeUnit.SECONDS);
             }
@@ -172,11 +173,11 @@ public final class CefProcessSupervisor {
             exitCode = cefProcess.exitValue();
             status = ProcessStatus.STOPPED;
 
-            System.out.println("[CefProcessSupervisor] CEF process stopped (exit code: " + exitCode + ")");
+            Logger.info("CefProcessSupervisor", "CEF process stopped (exit code: " + exitCode + ")");
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            System.err.println("[CefProcessSupervisor] Stop interrupted: " + e.getMessage());
+            Logger.error("CefProcessSupervisor", "Stop interrupted: " + e.getMessage());
         }
     }
 
@@ -227,7 +228,7 @@ public final class CefProcessSupervisor {
                 handleProcessExit(code);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                System.out.println("[CefProcessSupervisor] Monitor thread interrupted");
+                Logger.info("CefProcessSupervisor", "Monitor thread interrupted");
             }
         });
 
@@ -248,14 +249,14 @@ public final class CefProcessSupervisor {
         if (status == ProcessStatus.RUNNING) {
             if (code != 0) {
                 status = ProcessStatus.CRASHED;
-                System.err.println("[CefProcessSupervisor] CEF process CRASHED with exit code: " + code);
+                Logger.error("CefProcessSupervisor", "CEF process CRASHED with exit code: " + code);
             } else {
                 status = ProcessStatus.STOPPED;
-                System.out.println("[CefProcessSupervisor] CEF process exited normally with code: " + code);
+                Logger.info("CefProcessSupervisor", "CEF process exited normally with code: " + code);
             }
         } else {
             // Already marked as STOPPED by stop() method
-            System.out.println("[CefProcessSupervisor] CEF process terminated with code: " + code);
+            Logger.info("CefProcessSupervisor", "CEF process terminated with code: " + code);
         }
     }
 }

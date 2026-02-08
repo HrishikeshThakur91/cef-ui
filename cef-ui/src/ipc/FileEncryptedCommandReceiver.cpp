@@ -1,7 +1,7 @@
 #include "../../inc/ipc/FileEncryptedCommandReceiver.h"
 #include "../../inc/ipc/JsonParser.h"
+#include "../../inc/core/Logger.h"
 #include <fstream>
-#include <iostream>
 #include <thread>
 #include <chrono>
 #include <stdexcept>
@@ -49,8 +49,7 @@ FileEncryptedCommandReceiver::FileEncryptedCommandReceiver(
         std::to_string(aes_key_.size()));
   }
 
-  std::cerr << "[FileEncryptedCommandReceiver] Initialized with file: "
-            << control_file_ << std::endl;
+  Logger::info("FileEncryptedCommandReceiver", "Initialized with file: " + control_file_.string());
 }
 
 FileEncryptedCommandReceiver::~FileEncryptedCommandReceiver() {
@@ -59,17 +58,17 @@ FileEncryptedCommandReceiver::~FileEncryptedCommandReceiver() {
 
 void FileEncryptedCommandReceiver::Start() {
   if (running_) {
-    std::cerr << "[FileEncryptedCommandReceiver] Already running" << std::endl;
+    Logger::warn("FileEncryptedCommandReceiver", "Already running");
     return;
   }
 
   running_ = true;
-  std::cerr << "[FileEncryptedCommandReceiver] Starting polling thread..." << std::endl;
+  Logger::info("FileEncryptedCommandReceiver", "Starting polling thread...");
 
   // Start polling in background thread
   polling_thread_ = std::thread(&FileEncryptedCommandReceiver::PollingLoop, this);
 
-  std::cerr << "[FileEncryptedCommandReceiver] Polling thread started" << std::endl;
+  Logger::info("FileEncryptedCommandReceiver", "Polling thread started");
 }
 
 void FileEncryptedCommandReceiver::Stop() {
@@ -77,7 +76,7 @@ void FileEncryptedCommandReceiver::Stop() {
     return;
   }
 
-  std::cerr << "[FileEncryptedCommandReceiver] Stopping polling..." << std::endl;
+  Logger::info("FileEncryptedCommandReceiver", "Stopping polling...");
   running_ = false;
 
   // Wait for polling thread to finish
@@ -85,7 +84,7 @@ void FileEncryptedCommandReceiver::Stop() {
     polling_thread_.join();
   }
 
-  std::cerr << "[FileEncryptedCommandReceiver] Polling stopped" << std::endl;
+  Logger::info("FileEncryptedCommandReceiver", "Polling stopped");
 }
 
 std::vector<uint8_t> FileEncryptedCommandReceiver::DecodeBase64(
@@ -338,33 +337,28 @@ void FileEncryptedCommandReceiver::ProcessFile() {
   try {
     // Read encrypted file
     auto encrypted = ReadFile();
-    std::cerr << "[FileEncryptedCommandReceiver] Read " << encrypted.size()
-              << " bytes from file" << std::endl;
+    Logger::info("FileEncryptedCommandReceiver", "Read " + std::to_string(encrypted.size()) + " bytes from file");
 
     // Decrypt
     std::string json = Decrypt(encrypted);
-    std::cerr << "[FileEncryptedCommandReceiver] Decrypted JSON: " << json
-              << std::endl;
+    Logger::info("FileEncryptedCommandReceiver", "Decrypted JSON: " + json);
 
     // Parse command
     auto command = ParseCommand(json);
-    std::cerr << "[FileEncryptedCommandReceiver] Parsed command: "
-              << command.GetCommandId() << std::endl;
+    Logger::info("FileEncryptedCommandReceiver", "Parsed command: " + command.GetCommandId());
 
     // Forward to receiver
     receiver_.OnCommand(command);
-    std::cerr << "[FileEncryptedCommandReceiver] Command forwarded successfully"
-              << std::endl;
+    Logger::info("FileEncryptedCommandReceiver", "Command forwarded successfully");
 
   } catch (const std::exception& e) {
-    std::cerr << "[FileEncryptedCommandReceiver] Failed to process file: "
-              << e.what() << std::endl;
+    Logger::error("FileEncryptedCommandReceiver", "Failed to process file: " + std::string(e.what()));
     // Continue polling despite error
   }
 }
 
 void FileEncryptedCommandReceiver::PollingLoop() {
-  std::cerr << "[FileEncryptedCommandReceiver] Polling loop started" << std::endl;
+  Logger::info("FileEncryptedCommandReceiver", "Polling loop started");
 
   while (running_) {
     try {
@@ -380,7 +374,7 @@ void FileEncryptedCommandReceiver::PollingLoop() {
     std::this_thread::sleep_for(std::chrono::milliseconds(kPollingIntervalMs));
   }
 
-  std::cerr << "[FileEncryptedCommandReceiver] Polling loop finished" << std::endl;
+  Logger::info("FileEncryptedCommandReceiver", "Polling loop finished");
 }
 
 }  // namespace ipc

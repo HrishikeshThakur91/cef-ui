@@ -6,6 +6,7 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import com.ui.cef_control.util.Logger;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -36,7 +37,7 @@ import java.util.Map;
  * - No threads
  * - Single writer only
  * - Atomic file replace
- * - Uses System.out/err for logging
+ * - Uses Logger for logging
  * - No retries
  * - No health logic
  * - No process logic
@@ -81,19 +82,19 @@ public final class FileEncryptedControlChannel implements IControlCommandChannel
             keyBytes = Base64.getDecoder().decode(base64Key);
         } catch (IllegalArgumentException e) {
             String errorMsg = "Invalid Base64 key: " + e.getMessage();
-            System.err.println("[FileEncryptedControlChannel] " + errorMsg);
+            Logger.error("FileEncryptedControlChannel", errorMsg);
             throw new IllegalArgumentException(errorMsg, e);
         }
 
         if (keyBytes.length != AES_KEY_LENGTH) {
             String errorMsg = "Invalid key length: expected " + AES_KEY_LENGTH + " bytes, got " + keyBytes.length;
-            System.err.println("[FileEncryptedControlChannel] " + errorMsg);
+            Logger.error("FileEncryptedControlChannel", errorMsg);
             throw new IllegalArgumentException(errorMsg);
         }
 
         this.secretKey = new SecretKeySpec(keyBytes, "AES");
 
-        System.out.println("[FileEncryptedControlChannel] Initialized with file: " + controlFile);
+        Logger.info("FileEncryptedControlChannel", "Initialized with file: " + controlFile);
     }
 
     @Override
@@ -104,26 +105,26 @@ public final class FileEncryptedControlChannel implements IControlCommandChannel
 
         if (shutdown) {
             String errorMsg = "Cannot send command: channel is shutdown";
-            System.err.println("[FileEncryptedControlChannel] " + errorMsg);
+            Logger.error("FileEncryptedControlChannel", errorMsg);
             throw new IllegalStateException(errorMsg);
         }
 
         try {
             // Serialize command to JSON
             String jsonString = serializeToJson(command);
-            System.out.println("[FileEncryptedControlChannel] Serialized command: " + command.getCommandId());
+            Logger.info("FileEncryptedControlChannel", "Serialized command: " + command.getCommandId());
 
             // Encrypt the JSON
             byte[] encryptedData = encrypt(jsonString);
-            System.out.println("[FileEncryptedControlChannel] Encrypted command: " + encryptedData.length + " bytes");
+            Logger.info("FileEncryptedControlChannel", "Encrypted command: " + encryptedData.length + " bytes");
 
             // Write atomically to file
             writeAtomically(encryptedData);
-            System.out.println("[FileEncryptedControlChannel] Command written to file: " + controlFile);
+            Logger.info("FileEncryptedControlChannel", "Command written to file: " + controlFile);
 
         } catch (Exception e) {
             String errorMsg = "Failed to send command: " + e.getMessage();
-            System.err.println("[FileEncryptedControlChannel] " + errorMsg);
+            Logger.error("FileEncryptedControlChannel", errorMsg);
             throw new RuntimeException(errorMsg, e);
         }
     }
@@ -131,7 +132,7 @@ public final class FileEncryptedControlChannel implements IControlCommandChannel
     @Override
     public void shutdown() {
         shutdown = true;
-        System.out.println("[FileEncryptedControlChannel] Channel shutdown");
+        Logger.info("FileEncryptedControlChannel", "Channel shutdown");
     }
 
     /**
@@ -222,8 +223,7 @@ public final class FileEncryptedControlChannel implements IControlCommandChannel
             try {
                 Files.deleteIfExists(tempFile);
             } catch (IOException cleanupError) {
-                System.err.println(
-                        "[FileEncryptedControlChannel] Failed to delete temp file: " + cleanupError.getMessage());
+                Logger.error("FileEncryptedControlChannel", "Failed to delete temp file: " + cleanupError.getMessage());
             }
             throw e;
         }

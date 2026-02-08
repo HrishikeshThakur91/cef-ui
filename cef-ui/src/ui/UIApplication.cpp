@@ -5,7 +5,7 @@
 #include "../../inc/core/AppConfig.h"
 #include "../../inc/core/ControlCommandDispatcher.h"
 #include "../../inc/ipc/FileEncryptedCommandReceiver.h"
-#include <iostream>
+#include "../../inc/core/Logger.h"
 #include <filesystem>
 
 namespace cef_ui {
@@ -45,8 +45,8 @@ namespace cef_ui {
             const std::string& control_key = config_.GetControlKey();
 
             if (!control_file.empty() && !control_key.empty()) {
-                std::cerr << "[UIApplication] Initializing file-based control channel..." << std::endl;
-                std::cerr << "[UIApplication] Control file: " << control_file << std::endl;
+                Logger::info("UIApplication", "Initializing file-based control channel...");
+                Logger::info("UIApplication", "Control file: " + control_file);
 
                 try {
                     // Create dispatcher
@@ -64,15 +64,14 @@ namespace cef_ui {
 
                     // Start polling in background thread (non-blocking)
                     file_receiver_->Start();
-                    std::cerr << "[UIApplication] File-based control channel started" << std::endl;
+                    Logger::info("UIApplication", "File-based control channel started");
 
                 } catch (const std::exception& e) {
-                    std::cerr << "[UIApplication] Failed to initialize control channel: "
-                              << e.what() << std::endl;
+                    Logger::error("UIApplication", "Failed to initialize control channel: " + std::string(e.what()));
                     // Continue without control channel
                 }
             } else {
-                std::cerr << "[UIApplication] Control channel not configured, skipping" << std::endl;
+                Logger::info("UIApplication", "Control channel not configured, skipping");
             }
 
             // NOTE:
