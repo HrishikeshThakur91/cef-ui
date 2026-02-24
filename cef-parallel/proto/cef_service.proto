@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package cefcontrol;
 
-option java_package = "com.ui.cef_control.grpc.gen";
+option java_package = "com.anca.appl.fw.gui.cef_control.grpc.gen";
 option java_outer_classname = "CefControlProto";
 option java_multiple_files = true;
 
